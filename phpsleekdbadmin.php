@@ -275,10 +275,10 @@ function render_view_query() {
   $count = 0;
   $data = [];
 
+  $queryTimer = new MicroTimer();
+
   if ($query) {
     $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
-
-    $queryTimer = new MicroTimer();
 
     try {
       $data = @eval('return $db_store->' . $query . ';');
@@ -291,9 +291,9 @@ function render_view_query() {
     } else {
       $count = 1;
     }
-
-    $queryTimer->stop();
   }
+
+  $queryTimer->stop();
 
   ob_start();
     ?>
@@ -461,7 +461,7 @@ function render_view_query() {
           if (query && isFirstLoad) {
             $('[data-input]').val(query);
           }
-          if (query && !isFirstLoad) {
+          if (!isFirstLoad) {
             $('[data-input]').val($option.val());
           }
           $('[data-input]').caretTo('(', true);
