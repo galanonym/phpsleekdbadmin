@@ -449,13 +449,11 @@ function render_view_query() {
         var query = '<?php echo urlencode($query); ?>';
         query = decodeURIComponent(query);
         query = query.replace('+', ' ');
-        console.log(query);
 
         $(document).ready(function() { showHelp(query, true) });
         $('[data-select]').on('change', function() { showHelp(query, false); });
 
         function showHelp(query, isFirstLoad) {
-          console.log('showHelp', query, isFirstLoad);
           var $option = $('[data-select]').find('option:selected');
           if ($option.val() === '') { return; }
           if (query && isFirstLoad) {
