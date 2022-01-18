@@ -365,7 +365,7 @@ function render_view_browse() {
     return '';
   }
 
-  $limit = $_GET['limit'] ?? 30;
+  $limit = $_GET['limit'] ?? $limit_default;
   $offset = $_GET['offset'] ?? 0;
   $order = $_GET['order'] ?? 'ASC';
   $order_by = $_GET['order_by'] ?? '_id';
@@ -491,6 +491,7 @@ function render_view_drop() {
 
 function render_html($stores, $html) {
   global $directory;
+  global $limit_default;
   ?>
     <!DOCTYPE html>
     <html>
@@ -516,7 +517,7 @@ function render_html($stores, $html) {
             <b>Database:</b> <span><?php echo $directory; ?></span>
             <div class="seperator"></div>
             <?php foreach ($stores as $store) { ?>
-              <p><a href="?store=<?php echo urlencode($store); ?>&action=view_browse&limit=30&offset=0&order=ASC&order_by=_id">[Store] <?php echo $store; ?></a></p>
+              <p><a href="?store=<?php echo urlencode($store); ?>&action=view_browse&limit=<?php echo $limit_default; ?>&offset=0&order=ASC&order_by=_id">[Store] <?php echo $store; ?></a></p>
             <?php } ?>
             <div class="seperator"></div>
             <div class="seperator"></div>
