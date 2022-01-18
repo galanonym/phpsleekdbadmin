@@ -208,7 +208,7 @@ function render_view_query() {
               <option value="">... functions</option>
 
               <option
-                value="findAll()"
+                value="findAll([], <?php echo $limit_default; ?>)"
                 data-help-text="function findAll(array $orderBy = null, int $limit = null, int $offset = null): array"
                 data-help-example='findAll(["name" => "asc"], 30, 0)'
                 <?php if ($query === 'findAll()') { ?>selected<?php } ?>
@@ -222,14 +222,14 @@ function render_view_query() {
               >findById()</option>
 
               <option
-                value="findBy()"
+                value="findBy([], <?php echo $limit_default; ?>)"
                 data-help-text="function findBy(array $criteria, array $orderBy = null, int $limit = null, int $offset = null): array"
-                data-help-example='findBy(["author", "=", "John"], ["title" => "asc"], 10, 20);'
+                data-help-example='findBy(["author", "=", "John"], ["title" => "asc"], 30, 0);'
                 <?php if ($query === 'findBy()') { ?>selected<?php } ?>
               >findBy()</option>
 
               <option
-                value="findOneBy()"
+                value="findOneBy([])"
                 data-help-text="function findOneBy(array $criteria): array|null"
                 data-help-example='findOneBy(["author", "=", "Mike"]);'
                 <?php if ($query === 'findOneBy()') { ?>selected<?php } ?>
@@ -243,7 +243,7 @@ function render_view_query() {
               >count()</option>
 
               <option
-                value="insert()"
+                value="insert([])"
                 data-help-text="function insert(array $data): array"
                 data-help-example='insert(["name" => "Josh", "age" => 23, "city" => "london"]);'
                 <?php if ($query === 'insert()') { ?>selected<?php } ?>
@@ -278,7 +278,7 @@ function render_view_query() {
               >removeFieldsById()</option>
 
               <option
-                value="deleteBy()"
+                value="deleteBy([])"
                 data-help-text="function deleteBy(array $criteria, int $returnOption = Query::DELETE_RETURN_BOOL): array|bool|int"
                 data-help-example='deleteBy(["name", "=", "Joshua Edwards"]);'
                 <?php if ($query === 'deleteBy()') { ?>selected<?php } ?>
@@ -332,6 +332,9 @@ function render_view_query() {
           if ($option.val() === '') { return; }
           $('[data-input]').val($option.val());
           $('[data-input]').caretTo('(', true);
+          if ($('[data-input]').val().includes('[')) {
+            $('[data-input]').caretTo('[', true);
+          }
           var text = $option.attr('data-help-text');
           var example = $option.attr('data-help-example');
           if (text && example) {
