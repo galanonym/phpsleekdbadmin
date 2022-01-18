@@ -2,7 +2,7 @@
 
 ## What is phpSleekDBAdmin?
 
-phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Following in the spirit of the flat-file system used by SleekDB, phpSleekDBAdmin consists of a single source file, phpliteadmin.php, that is dropped into a directory on a server and then visited in a browser.  The interface and user experience is comparable to that of phpLiteAdmin and phpMyAdmin.
+phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Following in the spirit of the flat-file system used by SleekDB, phpSleekDBAdmin consists of a single source file, phpsleekdbadmin.php.  The interface and user experience is comparable to that of phpLiteAdmin and phpMyAdmin.
 
 ## Requirements
 
@@ -16,7 +16,24 @@ Go to your webroot
 cd /www/webroot
 ```
 
-Clone the repo and install dependencies
+Clone the repo and install dependencies with composer
 ```bash
 git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && composer install
 ```
+
+## Configuration
+
+-   rename `phpsleekdbadmin.config.sample.php` into `phpsleekdbadmin.config.php`
+-   do not change the settings in `phpsleekdbadmin.php` but in
+    `phpsleekdbadmin.config.php`
+
+1.   Open `phpsleekdbadmin.config.php` (or `phpsleekdbadmin.php`) in
+     a text editor.
+2.   Specify the directory as the value of the `$directory` variable. 
+3.   Modify the `$password` variable to be the password used for gaining access
+     to the phpSleekDBAdmin tool.
+4.   Open a web browser and navigate to the `phpsleekdbadmin/phpsleekdbadmin.php` file. You will be prompted to enter a password. Use the same password you set in step 3.
+
+## Usage
+
+Open 
