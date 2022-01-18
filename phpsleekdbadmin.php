@@ -544,6 +544,8 @@ function render_html($stores, $html) {
 
         <title>phpSleekDBAdmin</title>
 
+        <link rel="icon" href="data:image/x-icon;base64,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">
+
         <?php render_reset_css(); ?>
         <?php render_css(); ?>
 
@@ -691,8 +693,6 @@ function render_css() {
         border-bottom-color: rgb(255, 255, 255);
         border-left-color: rgb(255, 255, 255);
         border-color: #D2D2DC #E6E6F0 #E6E6F0 #D2D2DC;
-        -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-        -moz-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         border-radius: 2px;
       }
