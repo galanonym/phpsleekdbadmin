@@ -35,7 +35,7 @@ $password = '';
 
 // Directory relative to this file to search for databases (if false, manually list databases in the $databases variable)
 // $directory = '../kalis_db/';
-$directory = '.';
+$directory = '../database';
 
 // Set default number of rows to show
 $limit_default = 30;

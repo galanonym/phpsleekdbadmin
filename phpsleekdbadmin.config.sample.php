@@ -12,7 +12,7 @@
 $password = 'admin';
 
 // Directory relative to this file to search for databases
-$directory = '.';
+$directory = '../database';
 
 // Set default number of rows to show
 $limit_default = 30;
