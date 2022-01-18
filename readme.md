@@ -38,4 +38,4 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 
 ## Warning
 
-This library is using `eval()` for running queries. Please do not use in production.
+This library is using `eval()` for running queries. We filter out `;` but it may still be a security hole. Use in production only with extreme caution.
