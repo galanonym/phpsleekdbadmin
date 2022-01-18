@@ -536,6 +536,8 @@ function render_view_drop() {
 function render_html($stores, $html) {
   global $directory;
   global $limit_default;
+
+  $action = $_GET['action'] ?? 'view_browse';
   ?>
     <!DOCTYPE html>
     <html>
@@ -570,7 +572,7 @@ function render_html($stores, $html) {
             <b>Database:</b> <span><?php echo $directory; ?></span>
             <div class="seperator"></div>
             <?php foreach ($stores as $store) { ?>
-              <p><a href="?store=<?php echo urlencode($store); ?>&action=view_browse&limit=<?php echo $limit_default; ?>&offset=0&order=ASC&order_by=_id">[Store] <?php echo $store; ?></a></p>
+              <p><a href="?store=<?php echo urlencode($store); ?>&action=<?php echo urlencode($action); ?>&limit=<?php echo $limit_default; ?>&offset=0&order=ASC&order_by=_id<?php if ($action === 'view_query') { ?>&query=findAll([]%2C+50)<?php } ?>">[Store] <?php echo $store; ?></a></p>
             <?php } ?>
             <div class="seperator"></div>
             <div class="seperator"></div>
