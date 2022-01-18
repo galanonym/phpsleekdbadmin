@@ -30,7 +30,7 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 3.  Specify the directory as the value of the `$directory` variable. 
 4.  Modify the `$password` variable to be the password used for gaining access
     to the phpSleekDBAdmin tool.
-5.  Open a web browser and navigate to the `phpsleekdbadmin/phpsleekdbadmin.php` file. You will be prompted to enter a password. Use the same password you set in step 3.
+5.  Open a web browser and navigate to the `phpsleekdbadmin/phpsleekdbadmin.php` file. You will be prompted to enter a password. Use the same password you set in step 4.
 
 ## Screenshot
 
