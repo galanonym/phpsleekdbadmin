@@ -1,12 +1,12 @@
 <?php
-//	Project: phpSleekAdmin (https://kalis.no)
+//	Project: phpSleekDBAdmin (https://kalis.no)
 //	Version: 0.1.0
 //	Summary: PHP-based admin tool to manage SQLite2 and SQLite3 databases on the web
 //	Last updated: 2022-01-18
 //	Developers:
 //	   Matteus Kalis (mkalismedia@gmail.com)
 //
-//	Copyright (C) 2022, phpSleekAdmin
+//	Copyright (C) 2022, phpSleekDBAdmin
 //
 //	This program is free software: you can redistribute it and/or modify
 //	it under the terms of the GNU General Public License as published by
@@ -23,21 +23,19 @@
 //
 //	////////////////////////////////////////////////////////////////////////
 
-require __DIR__.'/vendor/autoload.php';
-
-use Symfony\Component\VarDumper\Cloner\VarCloner;
-use Symfony\Component\VarDumper\Dumper\CliDumper;
-use Symfony\Component\VarDumper\Dumper\HtmlDumper;
-use Symfony\Component\VarDumper\VarDumper;
+// You can configure phpsleekdbadmin in one of 2 ways:
+// 1. Rename phpsleekdbadmin.config.sample.php to phpsleekdbadmin.config.php and change parameters in there.
+//    You can set only your custom settings in phpsleekdbadmin.config.php. All other settings will be set to defaults.
+// 2. Change parameters directly in main phpsleekdbadmin.php file
 
 /* ---- Config ---- */
 
 // Password to gain access
-$password = 'admin';
+$password = '';
 
 // Directory relative to this file to search for databases (if false, manually list databases in the $databases variable)
-// $directory = '../../database/'; // ending with /
-$directory = '../test/sleekdbvcms/storage/stores/'; // ending with /
+// $directory = '../kalis_db/';
+$directory = '.';
 
 // Set default number of rows to show
 $limit_default = 30;
@@ -49,8 +47,26 @@ $max_depth = 10;
 $max_string_length = 200;
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//there is no reason for the average user to edit anything below this comment
+//There is no reason for the average user to edit anything below this comment
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+require __DIR__.'/vendor/autoload.php';
+
+use Symfony\Component\VarDumper\Cloner\VarCloner;
+use Symfony\Component\VarDumper\Dumper\CliDumper;
+use Symfony\Component\VarDumper\Dumper\HtmlDumper;
+use Symfony\Component\VarDumper\VarDumper;
+
+// Load optional configuration file
+$config_filename = './phpsleekdbadmin.config.php';
+if (is_readable($config_filename)) {
+	include_once $config_filename;
+}
+
+// Ensure directory seperator
+if ($directory[strlen($directory)-1] != '/') {
+  $directory .= '/';
+}
 
 start();
 function start() {
@@ -444,7 +460,7 @@ function render_view_drop($html) {
   if (isset($_POST['drop'])) {
     $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
     $db_store->deleteStore();
-    header('Location: phpsleekadmin.php');
+    header('Location: phpsleekdbadmin.php');
     die();
   }
 
@@ -482,7 +498,7 @@ function render_html($stores, $html) {
       <head>
         <meta charset="utf-8">
 
-        <title>phpSleekAdmin</title>
+        <title>phpSleekDBAdmin</title>
 
         <?php render_reset_css(); ?>
         <?php render_css(); ?>
@@ -494,7 +510,7 @@ function render_html($stores, $html) {
       <body class="margins">
         <div class="display-flex">
           <aside class="margins" style="flex: initial; width: 240px; border-right: 1px solid #ccc;">
-            <span class="logo">phpSleekAdmin</span>
+            <span class="logo">phpSleekDBAdmin</span>
             <span class="version">v0.1.0</span>
             <div class="seperator"></div>
             <div class="seperator"></div>
@@ -536,7 +552,7 @@ function render_view_login() {
       <head>
         <meta charset="utf-8">
 
-        <title>phpSleekAdmin - Login</title>
+        <title>phpSleekDBAdmin - Login</title>
 
         <?php render_reset_css(); ?>
         <?php render_css(); ?>
@@ -546,7 +562,7 @@ function render_view_login() {
       <body class="margins">
         <div style="width: 250px; margin: 0 auto;">
           <div class="seperator"></div>
-          <span class="logo">phpSleekAdmin</span>
+          <span class="logo">phpSleekDBAdmin</span>
           <span class="version">v0.1.0</span>
           <div class="seperator"></div>
           <div class="seperator"></div>
