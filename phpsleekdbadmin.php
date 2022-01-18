@@ -509,9 +509,16 @@ function render_html($stores, $html) {
 
       <body class="margins">
         <div class="display-flex">
-          <aside class="margins" style="flex: initial; width: 240px; border-right: 1px solid #ccc;">
+          <aside class="margins" style="flex: initial; width: 260px; border-right: 1px solid #ccc;">
             <span class="logo">phpSleekDBAdmin</span>
             <span class="version">v0.1.0</span>
+            <div style="height: 7px;"></div>
+            <a href="https://github.com/galanonym/phpsleekdbadmin" target="_blank">Documentation</a>
+            <span> | </span>
+            <a href="https://github.com/galanonym/phpsleekdbadmin/blob/main/LICENSE" target="_blank">License</a>
+            <span> | </span>
+            <a href="https://github.com/galanonym/phpsleekdbadmin" target="_blank">Project site</a>
+
             <div class="seperator"></div>
             <div class="seperator"></div>
             <b>Database:</b> <span><?php echo $directory; ?></span>
