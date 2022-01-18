@@ -422,7 +422,7 @@ function render_view_browse() {
           margin-bottom: -5px;
         }
       </style>
-      <pre style="padding-left: 10px; background-color: #1d1f21; border-radius: 5px;"><!--
+      <pre style="padding-left: 10px; background-color: #1d1f21; border-radius: 3px;"><!--
         --><?php dump($data); ?><!--
         --><script>
           // Expand all by default
