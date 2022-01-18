@@ -336,7 +336,7 @@ function render_view_query($html) {
           var text = $option.attr('data-help-text');
           var example = $option.attr('data-help-example');
           if (text && example) {
-            $('[data-help]').html(text + '<br><br>' + example);
+            $('[data-help]').html('<small><b>Description:</b></small><br>' + text + '<br><br><small><b>Example:</b></small><br>' + example);
             $('[data-help]').show();
           } else {
             $('[data-help]').hide();
