@@ -23,17 +23,16 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 
 ## Configuration
 
--   rename `phpsleekdbadmin.config.sample.php` into `phpsleekdbadmin.config.php`
--   do not change the settings in `phpsleekdbadmin.php` but in
-    `phpsleekdbadmin.config.php`
+1.  Rename `phpsleekdbadmin.config.sample.php` into `phpsleekdbadmin.config.php`
+2.  Open `phpsleekdbadmin.config.php` (or `phpsleekdbadmin.php`) in
+    a text editor.
+3.  Specify the directory as the value of the `$directory` variable. 
+4.  Modify the `$password` variable to be the password used for gaining access
+    to the phpSleekDBAdmin tool.
+5.  Open a web browser and navigate to the `phpsleekdbadmin/phpsleekdbadmin.php` file. You will be prompted to enter a password. Use the same password you set in step 3.
 
-1.   Open `phpsleekdbadmin.config.php` (or `phpsleekdbadmin.php`) in
-     a text editor.
-2.   Specify the directory as the value of the `$directory` variable. 
-3.   Modify the `$password` variable to be the password used for gaining access
-     to the phpSleekDBAdmin tool.
-4.   Open a web browser and navigate to the `phpsleekdbadmin/phpsleekdbadmin.php` file. You will be prompted to enter a password. Use the same password you set in step 3.
+## Screenshot
 
-## Usage
+![alt text](https://github.com/galanonym/phpsleekdbadmin/blob/main/screenshot.png?raw=true)
 
 Open 
