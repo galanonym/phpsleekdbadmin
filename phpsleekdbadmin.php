@@ -59,7 +59,7 @@ use Symfony\Component\VarDumper\VarDumper;
 // Load optional configuration file
 $config_filename = './phpsleekdbadmin.config.php';
 if (is_readable($config_filename)) {
-	include_once $config_filename;
+  include_once $config_filename;
 }
 
 // Ensure directory seperator
@@ -104,6 +104,40 @@ function authenticate() {
   }
 }
 
+function setup_vardumper() {
+  VarDumper::setHandler(function ($var) {
+    global $max_depth;
+    global $max_string_length;
+
+    $cloner = new VarCloner();
+    $dumper = 'cli' === PHP_SAPI ? new CliDumper() : new HtmlDumper();
+
+    $dumper->setStyles([
+      'default' => 'background-color:#1d1f21; color:#c5c8c6; line-height:1.2em; font:12px Menlo, Monaco, Consolas, monospace; word-wrap: break-word; white-space: pre-wrap; position:relative; z-index:99999; word-break: break-all',
+      'num' => 'font-weight:bold; color:#c66',
+      'const' => 'font-weight:bold',
+      'str' => 'color:#b5bd68',
+      'note' => 'color:#f0c674',
+      'ref' => 'color:#A0A0A0',
+      'public' => 'color:#FFFFFF',
+      'protected' => 'color:#FFFFFF',
+      'private' => 'color:#FFFFFF',
+      'meta' => 'color:#B729D9',
+      'key' => 'color:#81a2be',
+      'index' => 'color:#f0c674',
+      'ellipsis' => 'color:#FF8400',
+      'ns' => 'user-select:none;',
+      ]
+    );
+
+    $dumper->dump($cloner->cloneVar($var), null, [
+        'maxDepth' => $max_depth,
+        'maxStringLength' => $max_string_length,
+    ]);
+  });
+}
+
+
 function scan_stores() {
   global $directory;
 
@@ -123,234 +157,9 @@ function scan_stores() {
   return $stores;
 }
 
-function render_view_query() {
-  global $directory;
-  global $limit_default;
-
-  if (!isset($_GET['store'])) {
-    return '';
-  }
-
-  $store = $_GET['store'];
-
-  if (!isset($_GET['action'])) {
-    return '';
-  }
-
-  $action = $_GET['action'];
-
-  if ($action !== 'view_query') {
-    return '';
-  }
-
-  $query = $_GET['query'] ?? '';
-
-  $query = str_replace(';', '', $query);
-
-  $count = 0;
-  $data = [];
-
-  if ($query) {
-    $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
-
-    $queryTimer = new MicroTimer();
-
-    /* $result = eval('<?php return ' . '$db_store->' . $query . '; ?>'); */
-    $run = '';
-    $run .= 'require __DIR__."/vendor/autoload.php";';
-    $run .= '$db_store = new \SleekDB\Store("' . $store . '", "' . $directory . '", ["timeout" => false]);';
-    $run .= 'return $db_store->' . $query . ';';
-    try {
-      $data = @eval($run);
-    } catch (Throwable $e) {
-      $data = $e->getMessage();
-    }
-
-    if (is_array($data)) {
-      $count = count($data);
-    } else {
-      $count = 1;
-    }
-
-    $queryTimer->stop();
-  }
-
-  ob_start();
-    ?>
-      <span><?php echo $directory; ?></span> → <span><?php echo $store; ?></span>
-      <div class="seperator"></div>
-      <div class="seperator"></div>
-      <a href="?store=<?php echo urlencode($store); ?>&action=view_browse&limit=<?php echo $limit_default; ?>&offset=0&order=ASC&order_by=_id"><b>Browse</b></a>
-      <span> | </span>
-      <b>Query</b>
-      <span> | </span>
-      <a href="?store=<?php echo urlencode($store); ?>&action=view_drop"><b>Drop</b></a>
-      <div class="seperator"></div>
-      <div class="seperator"></div>
-      <p><b>Run query on store &apos;<?php echo $store; ?>&apos;</b><p>
-
-      <form method="GET" action="?store=<?php echo urlencode($store); ?>&action=<?php echo urlencode($action); ?>">
-        <input type="hidden" name="store" value="<?php echo $store; ?>">
-        <input type="hidden" name="action" value="<?php echo $action; ?>">
-        <div class="seperator"></div>
-
-        <div data-help class="help"></div>
-
-        <div class="display-flex">
-          <div style="flex: initial;">
-            <code><span style="vertical-align: -3px; line-height: 27px; font-size: 14px; padding-right: 5px;">$<?php echo $store; ?>-&gt;</span></code>
-          </div>
-          <div style="flex: 1;">
-            <input data-input style="width: 100%;" type="text" name="query" value="<?php if ($query) { echo htmlspecialchars($query); } ?>">
-          </div>
-          <div style="flex: initial;">
-            <select data-select>
-              <option value="">... functions</option>
-
-              <option
-                value="findAll([], <?php echo $limit_default; ?>)"
-                data-help-text="function findAll(array $orderBy = null, int $limit = null, int $offset = null): array"
-                data-help-example='findAll(["name" => "asc"], 30, 0)'
-                <?php if ($query === 'findAll()') { ?>selected<?php } ?>
-              >findAll()</option>
-
-              <option
-                value="findById()"
-                data-help-text="function findById(int|string $id): array|null"
-                data-help-example='findById(1);'
-                <?php if ($query === 'findById()') { ?>selected<?php } ?>
-              >findById()</option>
-
-              <option
-                value="findBy([], <?php echo $limit_default; ?>)"
-                data-help-text="function findBy(array $criteria, array $orderBy = null, int $limit = null, int $offset = null): array"
-                data-help-example='findBy(["author", "=", "John"], ["title" => "asc"], 30, 0);'
-                <?php if ($query === 'findBy()') { ?>selected<?php } ?>
-              >findBy()</option>
-
-              <option
-                value="findOneBy([])"
-                data-help-text="function findOneBy(array $criteria): array|null"
-                data-help-example='findOneBy(["author", "=", "Mike"]);'
-                <?php if ($query === 'findOneBy()') { ?>selected<?php } ?>
-              >findOneBy()</option>
-
-              <option
-                value="count()"
-                data-help-text="function count(): int"
-                data-help-example='count()'
-                <?php if ($query === 'count()') { ?>selected<?php } ?>
-              >count()</option>
-
-              <option
-                value="insert([])"
-                data-help-text="function insert(array $data): array"
-                data-help-example='insert(["name" => "Josh", "age" => 23, "city" => "london"]);'
-                <?php if ($query === 'insert()') { ?>selected<?php } ?>
-              >insert()</option>
-
-              <option
-                value="insertMany()"
-                data-help-text="function insertMany(array $data): array"
-                data-help-example='insertMany([ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]);'
-                <?php if ($query === 'insertMany()') { ?>selected<?php } ?>
-              >insertMany()</option>
-
-              <option
-                value="updateById()"
-                data-help-text="function updateById(int|string $id, array $updatable): array|false"
-                data-help-example='updateById(24, [ "address.street" => "first street" ]);'
-                <?php if ($query === 'updateById()') { ?>selected<?php } ?>
-              >updateById()</option>
-
-              <option
-                value="update()"
-                data-help-text="function update(array $updatable): bool;"
-                data-help-example='update([ ["_id" => 12, "title" => "SleekDB rocks!", ...], ["_id" => 13, "title" => "Multiple Updates", ...], ... ])'
-                <?php if ($query === 'update()') { ?>selected<?php } ?>
-              >update()</option>
-
-              <option
-                value="removeFieldsById()"
-                data-help-text="function removeFieldsById(int|string $id, array $fieldsToRemove): array|false"
-                data-help-example='removeFieldsById(24, [ "name", "age" ]);'
-                <?php if ($query === 'removeFieldsById()') { ?>selected<?php } ?>
-              >removeFieldsById()</option>
-
-              <option
-                value="deleteBy([])"
-                data-help-text="function deleteBy(array $criteria, int $returnOption = Query::DELETE_RETURN_BOOL): array|bool|int"
-                data-help-example='deleteBy(["name", "=", "Joshua Edwards"]);'
-                <?php if ($query === 'deleteBy()') { ?>selected<?php } ?>
-              >deleteBy()</option>
-
-              <option
-                value="deleteById()"
-                data-help-text="function deleteById(int|string $id): bool"
-                data-help-example='deleteById(12);'
-                <?php if ($query === 'deleteById()') { ?>selected<?php } ?>
-              >deleteById()</option>
-            </select>
-          </div>
-          <div style="flex: initial;">
-            <button type="submit">Go</button>
-          </div>
-        </div>
-      </form>
-
-      <div class="seperator"></div>
-      <div class="seperator"></div>
-      <?php if ($count === 0) { ?>
-        <p><b>No results.</b></p>
-      <?php } else { ?>
-        <p><b>$<?php echo $store; ?>-><?php echo htmlspecialchars($query); ?></b></p>
-      <?php } ?>
-
-      <style>
-        pre.sf-dump {
-          margin-bottom: -5px;
-        }
-      </style>
-      <pre style="padding-left: 10px; background-color: #1d1f21; border-radius: 3px;"><!--
-        --><?php dump($data); ?><!--
-        --><script>
-          // Expand all by default
-          var compacted = document.querySelectorAll('.sf-dump-compact');
-          for (var i = 0; i < compacted.length; i++) {
-            compacted[i].className = 'sf-dump-expanded';
-          }
-        </script><!--
-      --></pre>
-
-      <script>
-        'use strict';
-        $(document).ready(showHelp);
-        $('[data-select]').on('change', showHelp);
-
-        function showHelp() {
-          var $option = $('[data-select]').find('option:selected');
-          if ($option.val() === '') { return; }
-          $('[data-input]').val($option.val());
-          $('[data-input]').caretTo('(', true);
-          if ($('[data-input]').val().includes('[')) {
-            $('[data-input]').caretTo('[', true);
-          }
-          var text = $option.attr('data-help-text');
-          var example = $option.attr('data-help-example');
-          if (text && example) {
-            $('[data-help]').html('<small><b>Description:</b></small><br>' + text + '<br><br><small><b>Example:</b></small><br>' + example);
-            $('[data-help]').show();
-          } else {
-            $('[data-help]').hide();
-          }
-        }
-      </script>
-    <?php
-  return ob_get_clean();
-}
-
 function render_view_browse() {
   global $directory;
+  global $limit_default;
 
   if (!isset($_GET['store'])) {
     return '';
@@ -435,6 +244,240 @@ function render_view_browse() {
           }
         </script><!--
       --></pre>
+    <?php
+  return ob_get_clean();
+}
+
+function render_view_query() {
+  global $directory;
+  global $limit_default;
+
+  if (!isset($_GET['store'])) {
+    return '';
+  }
+
+  $store = $_GET['store'];
+
+  if (!isset($_GET['action'])) {
+    return '';
+  }
+
+  $action = $_GET['action'];
+
+  if ($action !== 'view_query') {
+    return '';
+  }
+
+  $query = $_GET['query'] ?? '';
+
+  $query = str_replace(';', '', $query);
+
+  $count = 0;
+  $data = [];
+
+  if ($query) {
+    $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
+
+    $queryTimer = new MicroTimer();
+
+    try {
+      $data = @eval('return $db_store->' . $query . ';');
+    } catch (Throwable $e) {
+      $data = $e->getMessage();
+    }
+
+    if (isset($data[0]) AND is_array($data[0])) {
+      $count = count($data);
+    } else {
+      $count = 1;
+    }
+
+    $queryTimer->stop();
+  }
+
+  ob_start();
+    ?>
+      <span><?php echo $directory; ?></span> → <span><?php echo $store; ?></span>
+      <div class="seperator"></div>
+      <div class="seperator"></div>
+      <a href="?store=<?php echo urlencode($store); ?>&action=view_browse&limit=<?php echo $limit_default; ?>&offset=0&order=ASC&order_by=_id"><b>Browse</b></a>
+      <span> | </span>
+      <b>Query</b>
+      <span> | </span>
+      <a href="?store=<?php echo urlencode($store); ?>&action=view_drop"><b>Drop</b></a>
+      <div class="seperator"></div>
+      <div class="seperator"></div>
+      <p><b>Run query on store &apos;<?php echo $store; ?>&apos;</b><p>
+
+      <form method="GET" action="?store=<?php echo urlencode($store); ?>&action=<?php echo urlencode($action); ?>">
+        <input type="hidden" name="store" value="<?php echo $store; ?>">
+        <input type="hidden" name="action" value="<?php echo $action; ?>">
+        <div class="seperator"></div>
+
+        <div data-help class="help"></div>
+
+        <div class="display-flex">
+          <div style="flex: initial;">
+            <code><span style="vertical-align: -3px; line-height: 27px; font-size: 14px; padding-right: 5px;">$<?php echo $store; ?>-&gt;</span></code>
+          </div>
+          <div style="flex: 1;">
+            <input data-input style="width: 100%;" type="text" name="query" value="<?php if ($query) { echo htmlspecialchars($query); } ?>">
+          </div>
+          <div style="flex: initial;">
+            <select data-select>
+              <option value="">... functions</option>
+
+              <option
+                value="findAll([], <?php echo $limit_default; ?>)"
+                data-help-text="function findAll(array $orderBy = null, int $limit = null, int $offset = null): array"
+                data-help-example='findAll(["name" => "asc"], 30, 0)'
+                <?php if (str_contains($query, 'findAll(')) { ?>selected<?php } ?>
+              >findAll()</option>
+
+              <option
+                value="findById()"
+                data-help-text="function findById(int|string $id): array|null"
+                data-help-example='findById(1);'
+                <?php if (str_contains($query, 'findById(')) { ?>selected<?php } ?>
+              >findById()</option>
+
+              <option
+                value="findBy([], <?php echo $limit_default; ?>)"
+                data-help-text="function findBy(array $criteria, array $orderBy = null, int $limit = null, int $offset = null): array"
+                data-help-example='findBy(["author", "=", "John"], ["title" => "asc"], 30, 0);'
+                <?php if (str_contains($query, 'findBy(')) { ?>selected<?php } ?>
+              >findBy()</option>
+
+              <option
+                value="findOneBy([])"
+                data-help-text="function findOneBy(array $criteria): array|null"
+                data-help-example='findOneBy(["author", "=", "Mike"]);'
+                <?php if (str_contains($query, 'findOneBy(')) { ?>selected<?php } ?>
+              >findOneBy()</option>
+
+              <option
+                value="count()"
+                data-help-text="function count(): int"
+                data-help-example='count()'
+                <?php if (str_contains($query, 'count(')) { ?>selected<?php } ?>
+              >count()</option>
+
+              <option
+                value="insert([])"
+                data-help-text="function insert(array $data): array"
+                data-help-example='insert(["name" => "Josh", "age" => 23, "city" => "london"]);'
+                <?php if (str_contains($query, 'insert(')) { ?>selected<?php } ?>
+              >insert()</option>
+
+              <option
+                value="insertMany()"
+                data-help-text="function insertMany(array $data): array"
+                data-help-example='insertMany([ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]);'
+                <?php if (str_contains($query, 'insertMany(')) { ?>selected<?php } ?>
+              >insertMany()</option>
+
+              <option
+                value="updateById()"
+                data-help-text="function updateById(int|string $id, array $updatable): array|false"
+                data-help-example='updateById(24, [ "address.street" => "first street" ]);'
+                <?php if (str_contains($query, 'updateById(')) { ?>selected<?php } ?>
+              >updateById()</option>
+
+              <option
+                value="update()"
+                data-help-text="function update(array $updatable): bool;"
+                data-help-example='update([ ["_id" => 12, "title" => "SleekDB rocks!", ...], ["_id" => 13, "title" => "Multiple Updates", ...], ... ])'
+                <?php if (str_contains($query, 'update(')) { ?>selected<?php } ?>
+              >update()</option>
+
+              <option
+                value="removeFieldsById()"
+                data-help-text="function removeFieldsById(int|string $id, array $fieldsToRemove): array|false"
+                data-help-example='removeFieldsById(24, [ "name", "age" ]);'
+                <?php if (str_contains($query, 'removeFieldsById(')) { ?>selected<?php } ?>
+              >removeFieldsById()</option>
+
+              <option
+                value="deleteBy([])"
+                data-help-text="function deleteBy(array $criteria, int $returnOption = Query::DELETE_RETURN_BOOL): array|bool|int"
+                data-help-example='deleteBy(["name", "=", "Joshua Edwards"]);'
+                <?php if (str_contains($query, 'deleteBy(')) { ?>selected<?php } ?>
+              >deleteBy()</option>
+
+              <option
+                value="deleteById()"
+                data-help-text="function deleteById(int|string $id): bool"
+                data-help-example='deleteById(12);'
+                <?php if (str_contains($query, 'deleteById(')) { ?>selected<?php } ?>
+              >deleteById()</option>
+            </select>
+          </div>
+          <div style="flex: initial;">
+            <button type="submit">Go</button>
+          </div>
+        </div>
+      </form>
+
+      <div class="seperator"></div>
+      <div class="seperator"></div>
+      <?php if ($count === 0) { ?>
+        <p><b>No results.</b></p>
+      <?php } else { ?>
+      <p><b>$<?php echo $store; ?>-><?php echo htmlspecialchars($query); ?>:</b></p>
+      <?php } ?>
+
+      <style>
+        pre.sf-dump {
+          margin-bottom: -5px;
+        }
+      </style>
+      <pre style="padding-left: 10px; background-color: #1d1f21; border-radius: 3px;"><!--
+        --><?php dump($data); ?><!--
+        --><script>
+          // Expand all by default
+          var compacted = document.querySelectorAll('.sf-dump-compact');
+          for (var i = 0; i < compacted.length; i++) {
+            compacted[i].className = 'sf-dump-expanded';
+          }
+        </script><!--
+      --></pre>
+
+      <p><b>Showing <?php echo $count; ?> document(s). (Query took <?php echo $queryTimer; ?> sec)</b></p>
+
+      <script>
+        'use strict';
+        var query = '<?php echo urlencode($query); ?>';
+        query = decodeURIComponent(query);
+        query = query.replace('+', ' ');
+        console.log(query);
+
+        $(document).ready(function() { showHelp(query, true) });
+        $('[data-select]').on('change', function() { showHelp(query, false); });
+
+        function showHelp(query, isFirstLoad) {
+          console.log('showHelp', query, isFirstLoad);
+          var $option = $('[data-select]').find('option:selected');
+          if ($option.val() === '') { return; }
+          if (query && isFirstLoad) {
+            $('[data-input]').val(query);
+          }
+          if (query && !isFirstLoad) {
+            $('[data-input]').val($option.val());
+          }
+          $('[data-input]').caretTo('(', true);
+          if ($('[data-input]').val().includes('[')) {
+            $('[data-input]').caretTo('[', true);
+          }
+          var text = $option.attr('data-help-text');
+          var example = $option.attr('data-help-example');
+          if (text && example) {
+            $('[data-help]').html('<small><b>Description:</b></small><br>' + text + '<br><br><small><b>Example:</b></small><br>' + example);
+            $('[data-help]').show();
+          } else {
+            $('[data-help]').hide();
+          }
+        }
+      </script>
     <?php
   return ob_get_clean();
 }
@@ -587,6 +630,37 @@ function render_view_login() {
   <?php
 }
 
+function render_reset_css() {
+  ?>
+    <style>
+      /* CSS Reset from DigitalOcean */
+      html {
+        box-sizing: border-box;
+        font-size: 16px;
+      }
+
+      *, *:before, *:after {
+        box-sizing: inherit;
+      }
+
+      body, h1, h2, h3, h4, h5, h6, p, ol, ul {
+        margin: 0;
+        padding: 0;
+        font-weight: normal;
+      }
+
+      ol, ul {
+        list-style: none;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  <?php
+}
+
 function render_css() {
   ?>
    <style>
@@ -690,70 +764,6 @@ function render_css() {
       }
     </style>
   <?php
-}
-
-function render_reset_css() {
-  ?>
-    <style>
-      /* CSS Reset from DigitalOcean */
-      html {
-        box-sizing: border-box;
-        font-size: 16px;
-      }
-
-      *, *:before, *:after {
-        box-sizing: inherit;
-      }
-
-      body, h1, h2, h3, h4, h5, h6, p, ol, ul {
-        margin: 0;
-        padding: 0;
-        font-weight: normal;
-      }
-
-      ol, ul {
-        list-style: none;
-      }
-
-      img {
-        max-width: 100%;
-        height: auto;
-      }
-    </style>
-  <?php
-}
-
-function setup_vardumper() {
-  VarDumper::setHandler(function ($var) {
-    global $max_depth;
-    global $max_string_length;
-
-    $cloner = new VarCloner();
-    $dumper = 'cli' === PHP_SAPI ? new CliDumper() : new HtmlDumper();
-
-    $dumper->setStyles([
-      'default' => 'background-color:#1d1f21; color:#c5c8c6; line-height:1.2em; font:12px Menlo, Monaco, Consolas, monospace; word-wrap: break-word; white-space: pre-wrap; position:relative; z-index:99999; word-break: break-all',
-      'num' => 'font-weight:bold; color:#c66',
-      'const' => 'font-weight:bold',
-      'str' => 'color:#b5bd68',
-      'note' => 'color:#f0c674',
-      'ref' => 'color:#A0A0A0',
-      'public' => 'color:#FFFFFF',
-      'protected' => 'color:#FFFFFF',
-      'private' => 'color:#FFFFFF',
-      'meta' => 'color:#B729D9',
-      'key' => 'color:#81a2be',
-      'index' => 'color:#f0c674',
-      'ellipsis' => 'color:#FF8400',
-      'ns' => 'user-select:none;',
-      ]
-    );
-
-    $dumper->dump($cloner->cloneVar($var), null, [
-        'maxDepth' => $max_depth,
-        'maxStringLength' => $max_string_length,
-    ]);
-  });
 }
 
 class MicroTimer {
