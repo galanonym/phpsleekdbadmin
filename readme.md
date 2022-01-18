@@ -35,3 +35,7 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 ## Screenshot
 
 ![alt text](https://github.com/galanonym/phpsleekdbadmin/blob/main/screenshot.png?raw=true)
+
+## Warning
+
+This library is using `eval()` for running queries. Please do not use in production, only in development.
