@@ -16,12 +16,7 @@ Go to your webroot
 cd /www/webroot
 ```
 
-Clone the repo
+Clone the repo and install dependencies
 ```bash
-git clone git@github.com:galanonym/phpSleekDBAdmin.git
-```
-
-Install dependencies
-```bash
-composer install
+git clone git@github.com:galanonym/phpSleekDBAdmin.git && cd phpSleekDBAdmin && composer install
 ```
