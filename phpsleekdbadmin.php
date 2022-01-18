@@ -311,7 +311,7 @@ function render_view_query() {
           margin-bottom: -5px;
         }
       </style>
-      <pre style="padding-left: 10px; background-color: #1d1f21; border-radius: 5px;"><!--
+      <pre style="padding-left: 10px; background-color: #1d1f21; border-radius: 3px;"><!--
         --><?php dump($data); ?><!--
         --><script>
           // Expand all by default
@@ -603,6 +603,23 @@ function render_css() {
 
       input {
         font-family: monospace;
+        background: #FBFBFF;
+        display: inline-block;
+        height: 27px;
+        line-height: 27px;
+        margin: 0;
+        padding: 0 8px;
+        vertical-align: middle;
+        border: 1px solid #FFF;
+        border-top-color: rgb(255, 255, 255);
+        border-right-color: rgb(255, 255, 255);
+        border-bottom-color: rgb(255, 255, 255);
+        border-left-color: rgb(255, 255, 255);
+        border-color: #D2D2DC #E6E6F0 #E6E6F0 #D2D2DC;
+        -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        -moz-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        border-radius: 2px;
       }
 
       hr {
@@ -617,6 +634,22 @@ function render_css() {
 
       a:hover {
         color: #00A;
+      }
+
+      button, select {
+        cursor: pointer;
+        vertical-align: middle;
+        display: inline-block;
+        margin: 0;
+        outline: none;
+        border: 1px solid #C8C8C8;
+        border-right-color: rgb(200, 200, 200);
+        border-bottom-color: rgb(200, 200, 200);
+        border-bottom-color: #B4B4B4;
+        border-right-color: #AAAAAA;
+        height: 27px;
+        padding: 0 10px;
+        border-radius: 2px;
       }
 
       .margins {
@@ -650,6 +683,7 @@ function render_css() {
         padding: 15px;
         background: #f9f9f9;
         border: 1px solid #ccc;
+        border-radius: 2px;
       }
     </style>
   <?php
