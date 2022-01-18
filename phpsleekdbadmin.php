@@ -34,7 +34,6 @@
 $password = 'admin';
 
 // Directory relative to this file to search for databases (if false, manually list databases in the $databases variable)
-// $directory = '../kalis_db/';
 $directory = '../database';
 
 // Set default number of rows to show
@@ -77,9 +76,9 @@ function start() {
   $stores = scan_stores();
 
   $html = '';
-  $html = render_view_browse($html);
-  $html = render_view_query($html);
-  $html = render_view_drop($html);
+  $html .= render_view_browse($html);
+  $html .= render_view_query($html);
+  $html .= render_view_drop($html);
   render_html($stores, $html);
 }
 
@@ -124,24 +123,24 @@ function scan_stores() {
   return $stores;
 }
 
-function render_view_query($html) {
+function render_view_query() {
   global $directory;
   global $limit_default;
 
   if (!isset($_GET['store'])) {
-    return $html;
+    return '';
   }
 
   $store = $_GET['store'];
 
   if (!isset($_GET['action'])) {
-    return $html;
+    return '';
   }
 
   $action = $_GET['action'];
 
   if ($action !== 'view_query') {
-    return $html;
+    return '';
   }
 
   $query = $_GET['query'] ?? '';
@@ -344,26 +343,26 @@ function render_view_query($html) {
         }
       </script>
     <?php
-  return $html . PHP_EOL . PHP_EOL . ob_get_clean();
+  return ob_get_clean();
 }
 
-function render_view_browse($html) {
+function render_view_browse() {
   global $directory;
 
   if (!isset($_GET['store'])) {
-    return $html;
+    return '';
   }
 
   $store = $_GET['store'];
 
   if (!isset($_GET['action'])) {
-    return $html;
+    return '';
   }
 
   $action = $_GET['action'];
 
   if ($action !== 'view_browse') {
-    return $html;
+    return '';
   }
 
   $limit = $_GET['limit'] ?? 30;
@@ -434,27 +433,27 @@ function render_view_browse($html) {
         </script><!--
       --></pre>
     <?php
-  return $html . PHP_EOL . PHP_EOL . ob_get_clean();
+  return ob_get_clean();
 }
 
-function render_view_drop($html) {
+function render_view_drop() {
   global $directory;
   global $limit_default;
 
   if (!isset($_GET['store'])) {
-    return $html;
+    return '';
   }
 
   $store = $_GET['store'];
 
   if (!isset($_GET['action'])) {
-    return $html;
+    return '';
   }
 
   $action = $_GET['action'];
 
   if ($action !== 'view_drop') {
-    return $html;
+    return '';
   }
 
   if (isset($_POST['drop'])) {
@@ -487,7 +486,7 @@ function render_view_drop($html) {
       </form>
 
     <?php
-  return $html . PHP_EOL . PHP_EOL . ob_get_clean();
+  return ob_get_clean();
 }
 
 function render_html($stores, $html) {
