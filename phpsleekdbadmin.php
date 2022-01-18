@@ -4,7 +4,7 @@
 //	Summary: PHP-based admin tool to manage SQLite2 and SQLite3 databases on the web
 //	Last updated: 2022-01-18
 //	Developers:
-//	   Matteus Kalis (mkalismedia@gmail.com)
+//	   Matteus Kalis (post [-at-] kalis [-dot-] no)
 //
 //	Copyright (C) 2022, phpSleekDBAdmin
 //
