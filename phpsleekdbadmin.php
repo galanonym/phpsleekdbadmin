@@ -196,7 +196,7 @@ function render_view_browse() {
       <div class="seperator"></div>
       <b>Browse</b>
       <span> | </span>
-      <a href="?store=<?php echo urlencode($store); ?>&action=view_query"><b>Query</b></a>
+      <a href="?store=<?php echo urlencode($store); ?>&action=view_query&query=findAll([]%2C+50)"><b>Query</b></a>
       <span> | </span>
       <a href="?store=<?php echo urlencode($store); ?>&action=view_drop"><b>Drop</b></a>
       <div class="seperator"></div>
@@ -514,7 +514,7 @@ function render_view_drop() {
       <div class="seperator"></div>
       <a href="?store=<?php echo urlencode($store); ?>&action=view_browse&limit=<?php echo $limit_default; ?>&offset=0&order=ASC&order_by=_id"><b>Browse</b></a>
       <span> | </span>
-      <a href="?store=<?php echo urlencode($store); ?>&action=view_query"><b>Query</b></a>
+      <a href="?store=<?php echo urlencode($store); ?>&action=view_query&query=findAll([]%2C+50)"><b>Query</b></a>
       <span> | </span>
       <b>Drop</b>
       <div class="seperator"></div>
