@@ -198,7 +198,7 @@ function render_view_query() {
 
         <div class="display-flex">
           <div style="flex: initial;">
-            <code><span style="vertical-align: -3px; font-size: 14px; padding-right: 5px;">$<?php echo $store; ?>-&gt;</span></code>
+            <code><span style="vertical-align: -3px; line-height: 27px; font-size: 14px; padding-right: 5px;">$<?php echo $store; ?>-&gt;</span></code>
           </div>
           <div style="flex: 1;">
             <input data-input style="width: 100%;" type="text" name="query" value="<?php if ($query) { echo htmlspecialchars($query); } ?>">
