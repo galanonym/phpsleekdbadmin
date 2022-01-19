@@ -6,7 +6,7 @@ phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Follo
 
 ## Requirements
 
--   a server with PHP >= 7.0.0 installed
+-   a server with PHP >= 7.0.0 installed, supporting sessions
 -   Composer
 -   SleekDB database
 
