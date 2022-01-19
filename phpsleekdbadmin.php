@@ -284,7 +284,7 @@ function render_view_query() {
 
   $query = $_GET['query'] ?? '';
 
-  $query = str_replace(';', '', $query);
+  $query = rtrim($query, ';');
 
   $count = 0;
   $data = [];
