@@ -434,15 +434,27 @@ function render_view_query() {
       <pre style="padding-left: 10px; background-color: #1d1f21; border-radius: 3px;"><!--
         --><?php dump($data); ?><!--
         --><script>
-          // Expand all by default
-          var compacted = document.querySelectorAll('.sf-dump-compact');
-          for (var i = 0; i < compacted.length; i++) {
-            compacted[i].className = 'sf-dump-expanded';
-          }
+          'use strict';
+          $('.sf-dump-compact').removeClass('sf-dump-compact').addClass('sf-dump-expanded');
         </script><!--
       --></pre>
 
       <p><b>Showing <?php echo $count; ?> document(s). (Query took <?php echo $queryTimer; ?> sec)</b></p>
+
+      <div class="seperator"></div>
+
+      <p><button data-compact>Compact All</button> <button data-expand>Expand All</button></p>
+      <script>
+        'use strict';
+        $('[data-compact]').on('click', function() {
+          $('.sf-dump-expanded:not(:first)').removeClass('sf-dump-expanded').addClass('sf-dump-compact');
+          $('.sf-dump-expanded:not(:first)').find('span').text('▶');
+        });
+        $('[data-expand]').on('click', function() {
+          $('.sf-dump-compact').removeClass('sf-dump-compact').addClass('sf-dump-expanded');
+          $('.sf-dump-compact').find('span').text('▼');
+        });
+      </script>
 
       <script>
         'use strict';
