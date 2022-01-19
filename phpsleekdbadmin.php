@@ -443,18 +443,20 @@ function render_view_query() {
 
       <div class="seperator"></div>
 
-      <p><button data-compact>Compact All</button> <button data-expand>Expand All</button></p>
-      <script>
-        'use strict';
-        $('[data-compact]').on('click', function() {
-          $('.sf-dump-expanded:not(:first)').removeClass('sf-dump-expanded').addClass('sf-dump-compact');
-          $('.sf-dump-expanded:not(:first)').find('span').text('▶');
-        });
-        $('[data-expand]').on('click', function() {
-          $('.sf-dump-compact').removeClass('sf-dump-compact').addClass('sf-dump-expanded');
-          $('.sf-dump-compact').find('span').text('▼');
-        });
-      </script>
+      <?php if ($count > 1) { ?>
+        <p><button data-compact>Compact All</button> <button data-expand>Expand All</button></p>
+        <script>
+          'use strict';
+          $('[data-compact]').on('click', function() {
+            $('.sf-dump-expanded:not(:first)').prev().text('▼');
+            $('.sf-dump-expanded:not(:first)').removeClass('sf-dump-expanded').addClass('sf-dump-compact');
+          });
+          $('[data-expand]').on('click', function() {
+            $('.sf-dump-compact').prev().text('▶');
+            $('.sf-dump-compact').removeClass('sf-dump-compact').addClass('sf-dump-expanded');
+          });
+        </script>
+      <?php } ?>
 
       <script>
         'use strict';
