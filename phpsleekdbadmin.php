@@ -227,7 +227,6 @@ function render_view_browse() {
       <?php } ?>
       <div class="seperator"></div>
       <code style="font-size: 11px;">$store-&gt;findAll(["<?php echo $order_by; ?>" =&gt; "<?php echo $order; ?>"], <?php echo $limit; ?>, <?php echo $offset; ?>)</code>
-      <div class="seperator"></div>
 
       <style>
         pre.sf-dump {
@@ -244,6 +243,21 @@ function render_view_browse() {
           }
         </script><!--
       --></pre>
+
+      <?php if ($count > 1) { ?>
+        <p><button data-compact>Compact</button> <button data-expand>Expand</button></p>
+        <script>
+          'use strict';
+          $('[data-compact]').on('click', function() {
+            $('.sf-dump-expanded:not(:first)').prev().text('▼');
+            $('.sf-dump-expanded:not(:first)').removeClass('sf-dump-expanded').addClass('sf-dump-compact');
+          });
+          $('[data-expand]').on('click', function() {
+            $('.sf-dump-compact').prev().text('▶');
+            $('.sf-dump-compact').removeClass('sf-dump-compact').addClass('sf-dump-expanded');
+          });
+        </script>
+      <?php } ?>
     <?php
   return ob_get_clean();
 }
@@ -420,10 +434,14 @@ function render_view_query() {
 
       <div class="seperator"></div>
       <div class="seperator"></div>
+
+      <p><b>Showing <?php echo $count; ?> document(s). (Query took <?php echo $queryTimer; ?> sec)</b></p>
+      <div class="seperator"></div>
+
       <?php if ($count === 0) { ?>
-        <p><b>No results.</b></p>
+        <p><code style="font-size: 11px;">No results.</code></p>
       <?php } else { ?>
-      <p><b>$<?php echo $store; ?>-><?php echo htmlspecialchars($query); ?>:</b></p>
+      <p><code style="font-size: 11px;">$<?php echo $store; ?>-><?php echo htmlspecialchars($query); ?></code></p>
       <?php } ?>
 
       <style>
@@ -439,12 +457,8 @@ function render_view_query() {
         </script><!--
       --></pre>
 
-      <p><b>Showing <?php echo $count; ?> document(s). (Query took <?php echo $queryTimer; ?> sec)</b></p>
-
-      <div class="seperator"></div>
-
       <?php if ($count > 1) { ?>
-        <p><button data-compact>Compact All</button> <button data-expand>Expand All</button></p>
+        <p><button data-compact>Compact</button> <button data-expand>Expand</button></p>
         <script>
           'use strict';
           $('[data-compact]').on('click', function() {
@@ -460,9 +474,8 @@ function render_view_query() {
 
       <script>
         'use strict';
-        var query = '<?php echo urlencode($query); ?>';
-        query = decodeURIComponent(query);
-        query = query.replace('+', ' ');
+        var query = '<?php echo base64_encode($query); ?>';
+        query = b64_to_utf8(query);
 
         $(document).ready(function() { showHelp(query, true) });
         $('[data-select]').on('change', function() { showHelp(query, false); });
@@ -488,6 +501,10 @@ function render_view_query() {
           } else {
             $('[data-help]').hide();
           }
+        }
+
+        function b64_to_utf8( str ) {
+          return decodeURIComponent(escape(window.atob( str )));
         }
       </script>
     <?php
