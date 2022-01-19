@@ -622,7 +622,7 @@ function render_html($stores, $html) {
               <button type="submit">Logout</button>
             </form>
           </aside>
-          <main class="margins" style="flex: 1;">
+          <main class="margins" style="flex: 1; max-width: 900px;">
             <?php echo $html; ?>
           </main>
         </div>
