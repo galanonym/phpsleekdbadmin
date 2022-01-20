@@ -39,9 +39,9 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 ## Changelog
 
 0.2.0 (2022-01-20)
-- feature    Removed eval()
-- feature    Add support for updateOrInsert() and updateOrInsertMany()
-- issue #1   Use microtime() directly
+- feature - Removed eval()
+- feature - Add support for updateOrInsert() and updateOrInsertMany()
+- issue #1 - Use microtime() directly
 
 0.1.0 (2022-01-18)
 - Initial release
