@@ -1,8 +1,8 @@
 <?php
 //	Project: phpSleekDBAdmin (https://kalis.no)
-//	Version: 0.2.0
+//	Version: 0.2.1
 //	Summary: PHP-based admin tool to manage SQLite2 and SQLite3 databases on the web
-//	Last updated: 2022-01-20
+//	Last updated: 2022-01-21
 //	Developers:
 //	   Matteus Kalis (post [-at-] kalis [-dot-] no)
 //
@@ -23,7 +23,7 @@
 //
 //	////////////////////////////////////////////////////////////////////////
 
-// You can configure phpsleekdbadmin in one of 2 ways:
+// You can configure phpSleekDBAdmin in one of 2 ways:
 // 1. Rename phpsleekdbadmin.config.sample.php to phpsleekdbadmin.config.php and change parameters in there.
 //    You can set only your custom settings in phpsleekdbadmin.config.php. All other settings will be set to defaults.
 // 2. Change parameters directly in main phpsleekdbadmin.php file
@@ -49,7 +49,7 @@ $max_string_length = 200;
 //There is no reason for the average user to edit anything below this comment
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-require __DIR__.'/vendor/autoload.php';
+require __DIR__.'/phpsleekdbadmin_dependencies/autoload.php';
 
 use Symfony\Component\VarDumper\Cloner\VarCloner;
 use Symfony\Component\VarDumper\Dumper\CliDumper;
@@ -76,6 +76,7 @@ function start() {
   $stores = scan_stores();
 
   $html = '';
+  $html .= render_no_view($html);
   $html .= render_view_browse($html);
   $html .= render_view_query($html);
   $html .= render_view_drop($html);
@@ -155,6 +156,18 @@ function scan_stores() {
   }
 
   return $stores;
+}
+
+function render_no_view() {
+  if (!isset($_GET['action'])) {
+    ob_start();
+      ?>
+        <b>Welcome to phpSleekDBAdmin!</b>
+        <div class="seperator"></div>
+        <span>Please select a store in the main menu.</span>
+      <?php
+    return ob_get_clean();
+  }
 }
 
 function render_view_browse() {
@@ -763,7 +776,7 @@ function render_html($stores, $html) {
         <?php render_reset_css(); ?>
         <?php render_css(); ?>
 
-        <script src="vendor/components/jquery/jquery.min.js"></script>
+        <script src="phpsleekdbadmin_dependencies/components/jquery/jquery.min.js"></script>
         <?php render_jquery_caret(); ?>
       </head>
 
@@ -771,7 +784,7 @@ function render_html($stores, $html) {
         <div class="display-flex">
           <aside class="margins" style="flex: initial; width: 260px; border-right: 1px solid #ccc;">
             <span class="logo">phpSleekDBAdmin</span>
-            <span class="version">v0.2.0</span>
+            <span class="version">v0.2.1</span>
             <div style="height: 7px;"></div>
             <a href="https://github.com/galanonym/phpsleekdbadmin" target="_blank">Documentation</a>
             <span> | </span>
@@ -830,7 +843,7 @@ function render_view_login() {
         <div style="width: 250px; margin: 0 auto;">
           <div class="seperator"></div>
           <span class="logo">phpSleekDBAdmin</span>
-          <span class="version">v0.2.0</span>
+          <span class="version">v0.2.1</span>
           <div class="seperator"></div>
           <div class="seperator"></div>
           <form method="POST">

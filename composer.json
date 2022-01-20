@@ -3,5 +3,8 @@
         "symfony/var-dumper": "^5.4",
         "rakibtg/sleekdb": "^2.13",
         "components/jquery": "^3.6"
+    },
+     "config": {
+        "vendor-dir": "phpsleekdbadmin_dependencies"
     }
 }

@@ -7,7 +7,6 @@ phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Follo
 ## Requirements
 
 -   a server with PHP >= 7.0.0 installed, supporting sessions
--   Composer
 -   SleekDB database
 
 ## Installation
@@ -37,6 +36,9 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 ![alt text](https://github.com/galanonym/phpsleekdbadmin/blob/main/screenshot.png?raw=true)
 
 ## Changelog
+
+0.2.1 (2022-01-21)
+- feature - Install through .zip file, not composer 
 
 0.2.0 (2022-01-20)
 - feature - eval() is no longer used, input for every parameter and simple array parser is used instead
