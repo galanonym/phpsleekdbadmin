@@ -295,14 +295,13 @@ function render_view_query() {
 
   $time_start = microtime(true);
 
-  $tokenScanner = new ArrayTokenScanner();
+  $str2arr = new ArrayTokenScanner();
   $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
 
   try {
 
     if ($function_name === 'findAll') {
-      // first param is array
-      $order_by = $tokenScanner->scan($query_param_1);
+      $order_by = @$str2arr->scan($query_param_1);
       $limit = intval($query_param_2);
       $offset = intval($query_param_3);
       $data = $db_store->findAll($order_by, $limit, $offset);
@@ -311,6 +310,98 @@ function render_view_query() {
     if ($function_name === 'findById') {
       $id = $query_param_1;
       $data = $db_store->findById($id);
+    }
+
+    if ($function_name === 'findBy') {
+      $criteria = @$str2arr->scan($query_param_1);
+      $order_by = @$str2arr->scan($query_param_2);
+      $limit = intval($query_param_3);
+      $offset = intval($query_param_4);
+      $data = $db_store->findBy($criteria, $order_by, $limit, $offset);
+    }
+
+    if ($function_name === 'findOneBy') {
+      $criteria = @$str2arr->scan($query_param_1);
+      $data = $db_store->findOneBy($criteria);
+    }
+
+    if ($function_name === 'count') {
+      $data = $db_store->count();
+    }
+
+    if ($function_name === 'insert') {
+      $insertable = @$str2arr->scan($query_param_1);
+      $data = $db_store->insert($insertable);
+    }
+
+    if ($function_name === 'insertMany') {
+      // $str2arr does not support multiple arrays in array
+      $converted = convert_multiple_array_string($query_param_1);
+
+      $insertable_array = [];
+      foreach($converted as $insertable) {
+        $insertable = @$str2arr->scan($insertable);
+        array_push($insertable_array, $insertable);
+      }
+
+      $data = $db_store->insertMany($insertable_array);
+    }
+
+    if ($function_name === 'updateById') {
+      $id = $query_param_1;
+      $updatable = @$str2arr->scan($query_param_2);
+
+      $data = $db_store->updateById($id, $updatable);
+    }
+
+    if ($function_name === 'update') {
+      // $str2arr does not support multiple arrays in array
+      $converted = convert_multiple_array_string($query_param_1);
+
+      $updatable_array = [];
+      foreach($converted as $updatable) {
+        $updatable = @$str2arr->scan($updatable);
+        array_push($updatable_array, $updatable);
+      }
+
+      $data = $db_store->update($updatable_array);
+    }
+
+    if ($function_name === 'updateOrInsert') {
+      $insertable = @$str2arr->scan($query_param_1);
+      $autoGenerateIdOnInsert = boolval($query_param_2);
+      $data = $db_store->updateOrInsert($insertable, $autoGenerateIdOnInsert);
+    }
+
+    if ($function_name === 'updateOrInsertMany') {
+      // $str2arr does not support multiple arrays in array
+      $converted = convert_multiple_array_string($query_param_1);
+
+      $insertable_array = [];
+      foreach($converted as $insertable) {
+        $insertable = @$str2arr->scan($insertable);
+        array_push($insertable_array, $insertable);
+      }
+
+      $autoGenerateIdOnInsert = boolval($query_param_2);
+
+      $data = $db_store->updateOrInsertMany($insertable_array, $autoGenerateIdOnInsert);
+    }
+
+    if ($function_name === 'removeFieldsById') {
+      $id = $query_param_1;
+      $fieldsToRemove = @$str2arr->scan($query_param_2);
+      $data = $db_store->removeFieldsById($id, $fieldsToRemove);
+    }
+
+    if ($function_name === 'deleteById') {
+      $id = $query_param_1;
+      $data = $db_store->deleteById($id);
+    }
+
+    if ($function_name === 'deleteBy') {
+      $criteria = @$str2arr->scan($query_param_1);
+      $data = $db_store->deleteBy($criteria);
     }
 
   } catch (Throwable $e) {
@@ -356,83 +447,18 @@ function render_view_query() {
         <select data-select name="function_name">
           <option value="findAll" <?php if ($function_name === 'findAll') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;findAll()</option>
           <option value="findById" <?php if ($function_name === 'findById') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;findById()</option>
-
-          <option
-            value="findById()"
-            data-help-text="function findById(int|string $id): array|null"
-            data-help-example='findById(1);'
-            <?php if (str_contains($function_name, 'findById(')) { ?>selected<?php } ?>
-          >findById()</option>
-
-          <option
-            value="findBy([], <?php echo $limit_default; ?>)"
-            data-help-text="function findBy(array $criteria, array $orderBy = null, int $limit = null, int $offset = null): array"
-            data-help-example='findBy(["author", "=", "John"], ["title" => "asc"], 30, 0);'
-            <?php if (str_contains($function_name, 'findBy(')) { ?>selected<?php } ?>
-          >findBy()</option>
-
-          <option
-            value="findOneBy([])"
-            data-help-text="function findOneBy(array $criteria): array|null"
-            data-help-example='findOneBy(["author", "=", "Mike"]);'
-            <?php if (str_contains($function_name, 'findOneBy(')) { ?>selected<?php } ?>
-          >findOneBy()</option>
-
-          <option
-            value="count()"
-            data-help-text="function count(): int"
-            data-help-example='count()'
-            <?php if (str_contains($function_name, 'count(')) { ?>selected<?php } ?>
-          >count()</option>
-
-          <option
-            value="insert([])"
-            data-help-text="function insert(array $data): array"
-            data-help-example='insert(["name" => "Josh", "age" => 23, "city" => "london"]);'
-            <?php if (str_contains($function_name, 'insert(')) { ?>selected<?php } ?>
-          >insert()</option>
-
-          <option
-            value="insertMany()"
-            data-help-text="function insertMany(array $data): array"
-            data-help-example='insertMany([ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]);'
-            <?php if (str_contains($function_name, 'insertMany(')) { ?>selected<?php } ?>
-          >insertMany()</option>
-
-          <option
-            value="updateById()"
-            data-help-text="function updateById(int|string $id, array $updatable): array|false"
-            data-help-example='updateById(24, [ "address.street" => "first street" ]);'
-            <?php if (str_contains($function_name, 'updateById(')) { ?>selected<?php } ?>
-          >updateById()</option>
-
-          <option
-            value="update()"
-            data-help-text="function update(array $updatable): bool;"
-            data-help-example='update([ ["_id" => 12, "title" => "SleekDB rocks!", ...], ["_id" => 13, "title" => "Multiple Updates", ...], ... ])'
-            <?php if (str_contains($function_name, 'update(')) { ?>selected<?php } ?>
-          >update()</option>
-
-          <option
-            value="removeFieldsById()"
-            data-help-text="function removeFieldsById(int|string $id, array $fieldsToRemove): array|false"
-            data-help-example='removeFieldsById(24, [ "name", "age" ]);'
-            <?php if (str_contains($function_name, 'removeFieldsById(')) { ?>selected<?php } ?>
-          >removeFieldsById()</option>
-
-          <option
-            value="deleteBy([])"
-            data-help-text="function deleteBy(array $criteria, int $returnOption = Query::DELETE_RETURN_BOOL): array|bool|int"
-            data-help-example='deleteBy(["name", "=", "Joshua Edwards"]);'
-            <?php if (str_contains($function_name, 'deleteBy(')) { ?>selected<?php } ?>
-          >deleteBy()</option>
-
-          <option
-            value="deleteById()"
-            data-help-text="function deleteById(int|string $id): bool"
-            data-help-example='deleteById(12);'
-            <?php if (str_contains($function_name, 'deleteById(')) { ?>selected<?php } ?>
-          >deleteById()</option>
+          <option value="findBy" <?php if ($function_name === 'findBy') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;findBy()</option>
+          <option value="findOneBy" <?php if ($function_name === 'findOneBy') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;findOneBy()</option>
+          <option value="count" <?php if ($function_name === 'count') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;count()</option>
+          <option value="insert" <?php if ($function_name === 'insert') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;insert()</option>
+          <option value="insertMany" <?php if ($function_name === 'insertMany') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;insertMany()</option>
+          <option value="updateById" <?php if ($function_name === 'updateById') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;updateById()</option>
+          <option value="update" <?php if ($function_name === 'update') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;update()</option>
+          <option value="updateOrInsert" <?php if ($function_name === 'updateOrInsert') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;updateOrInsert()</option>
+          <option value="updateOrInsertMany" <?php if ($function_name === 'updateOrInsertMany') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;updateOrInsertMany()</option>
+          <option value="removeFieldsById" <?php if ($function_name === 'removeFieldsById') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;removeFieldsById()</option>
+          <option value="deleteById" <?php if ($function_name === 'deleteById') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;deleteById()</option>
+          <option value="deleteBy" <?php if ($function_name === 'deleteBy') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;deleteBy()</option>
         </select>
 
          <div style="display: none;" data-function-param-1>
@@ -444,7 +470,7 @@ function render_view_query() {
 
          <div style="display: none;" data-function-param-2>
           <div class="seperator"></div>
-          <code style="font-size: 11px;">Method parameter 2 - Type: int $limit - Example: 50</code>
+          <code style="font-size: 11px;">Method parameter 2 - Type: int $limit - Example: 30</code>
           <div style="height: 2px;"></div>
           <input type="text" style="width: 100%" name="query_param_2" value="">
         </div>
@@ -539,7 +565,7 @@ function render_view_query() {
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $orderBy - Example: ["name" =&gt; "asc"]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
 
-            $('[data-function-param-2]').show().find('code').html('Method parameter 2 - Type: int $limit - Example: 50');
+            $('[data-function-param-2]').show().find('code').html('Method parameter 2 - Type: int $limit - Example: 30');
             $('[data-function-param-2]').find('input').val(queryParam2 && isFirstLoad ? queryParam2 : limitDefault);
 
             $('[data-function-param-3]').show().find('code').html('Method parameter 3 - Type: int $offset - Example: 0');
@@ -551,26 +577,86 @@ function render_view_query() {
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
           }
 
-          console.log(value);
-          /* if (isFirstLoad) { */
-          /*   $('[data-input]').val(query); */
-          /* } */
-          /* if (!isFirstLoad) { */
-          /*   $('[data-input]').val($option.val()); */
-          /* } */
-          /* $('[data-input]').caretTo('(', true); */
-          /* if ($('[data-input]').val().includes('[')) { */
-          /*   $('[data-input]').caretTo('[', true); */
-          /* } */
-          /* var text = $option.attr('data-help-text'); */
-          /* var example = $option.attr('data-help-example'); */
-          /* if (text && example) { */
-          /*   $('[data-help]').html('<small><b>Description:</b></small><br>' + text + '<br><br><small><b>Example:</b></small><br>' + example); */
-          /*   $('[data-help]').show(); */
-          /* } else { */
-          /*   $('[data-help]').hide(); */
-          /* } */
+          if (value === 'findBy') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $criteria - Example: ["author", "=", "Mike"]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
 
+            $('[data-function-param-2]').show().find('code').html('Method parameter 2 - Type: array $orderBy - Example: ["name" =&gt; "asc"]');
+            $('[data-function-param-2]').find('input').val(queryParam2 && isFirstLoad ? queryParam2 : '[]');
+
+            $('[data-function-param-3]').show().find('code').html('Method parameter 3 - Type: int $limit - Example: 30');
+            $('[data-function-param-3]').find('input').val(queryParam3 && isFirstLoad ? queryParam3 : limitDefault);
+
+            $('[data-function-param-4]').show().find('code').html('Method parameter 4 - Type: int $offset - Example: 0');
+            $('[data-function-param-4]').find('input').val(0);
+          }
+
+          if (value === 'findOneBy') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $criteria - Example: ["author", "=", "Mike"]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+          }
+
+          if (value === 'count') {
+            // No params
+          }
+
+          if (value === 'insert') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $data - Example: ["name" => "Josh", "age" => 23, "city" => "london"]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+          }
+
+          if (value === 'insertMany') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $data - Example: [ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+          }
+
+          if (value === 'updateById') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
+
+            $('[data-function-param-2]').show().find('code').html('Method parameter 2 - Type: array $updatable - Example: [ "name" => "Georg", "age" => 22 ] or [ "address.street" => "first street" ]');
+            $('[data-function-param-2]').find('input').val(queryParam2 && isFirstLoad ? queryParam2 : '[]');
+          }
+
+          if (value === 'update') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $updatable - Example: [ ["_id" => 12, "title" => "SleekDB rocks!", ...], ["_id" => 13, "title" => "Multiple Updates", ...], ... ]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+          }
+
+
+          if (value === 'updateOrInsert') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $data - Example: ["_id" => 23, "name" => "John", ...  ]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+
+            $('[data-function-param-2]').show().find('code').html('Method parameter 2 - Type: bool $autoGenerateIdOnInsert - Example: true (Apply an auto-generated _id if it is an insert)');
+            $('[data-function-param-2]').find('input').val('true');
+          }
+
+          if (value === 'updateOrInsertMany') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $data - Example: [ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+
+            $('[data-function-param-2]').show().find('code').html('Method parameter 2 - Type: bool $autoGenerateIdOnInsert - Example: true (Apply an auto-generated _id if it is an insert)');
+            $('[data-function-param-2]').find('input').val('true');
+          }
+
+          if (value === 'removeFieldsById') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
+
+            $('[data-function-param-2]').show().find('code').html('Method parameter 2 - Type: array $fieldsToRemove - Example: [ "name", "age" ]');
+            $('[data-function-param-2]').find('input').val(queryParam2 && isFirstLoad ? queryParam2 : '[]');
+          }
+
+          if (value === 'deleteById') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
+          }
+
+          if (value === 'deleteBy') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $criteria - Example: ["name", "=", "Joshua Edwards"]]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+          }
         }
 
         function b64_to_utf8( str ) {
@@ -1028,8 +1114,10 @@ class ArrayTokenScanner
                     // Is assoc key
 
                     // Do not surround strings with extra quotes
-                    $token[1] = str_replace('\'', '', $token[1]);
-                    $token[1] = str_replace('"', '', $token[1]);
+                    $token[1] = rtrim($token[1], '\'');
+                    $token[1] = ltrim($token[1], '\'');
+                    $token[1] = rtrim($token[1], '"');
+                    $token[1] = ltrim($token[1], '"');
 
                     $assoc = $token[1];
                     if(preg_match('/^-?(0|[1-9][0-9]*)$/', $assoc)) {
@@ -1048,8 +1136,10 @@ class ArrayTokenScanner
                 if(in_array($token[0], [T_STRING, T_NUM_STRING, T_CONSTANT_ENCAPSED_STRING])) {
 
                     // Do not surround strings with extra quotes
-                    $token[1] = str_replace('\'', '', $token[1]);
-                    $token[1] = str_replace('"', '', $token[1]);
+                    $token[1] = rtrim($token[1], '\'');
+                    $token[1] = ltrim($token[1], '\'');
+                    $token[1] = rtrim($token[1], '"');
+                    $token[1] = ltrim($token[1], '"');
 
                     $array[($assoc !== false) ? $assoc : $this->createKey($index)] = $this->parseAtomic($token[1]);
                 }
@@ -1208,4 +1298,52 @@ class ArrayTokenScanner
         // For example, bitsets are not supported. 0x2,1x2 etc
         return $value;
     }
+}
+
+// $str2arr does not support multiple arrays in array so this is a custom simple solution to that
+//
+// Conversts strings like: '[ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19] ]'
+// Into array of strings: [ '["name" => "Josh", "age" => 23]', '["name" => "Mike", "age" => 19]' ]
+function convert_multiple_array_string($string) {
+  $string = trim($string);
+
+  // Remove first [
+  if (substr($string, 0, 1) === '[') {
+    $string = substr($string, 1, strlen($string));
+  }
+
+  // Remove last ]
+  if (substr($string, -1, 1) === ']') {
+    $string = substr($string, 0, -1);
+  }
+
+  if (str_contains($string, '], [')) {
+    $exploaded = explode('], [', $string);
+  }
+
+  if (str_contains($string, '],[')) {
+    $exploaded = explode('],[', $string);
+  }
+
+  // First element in array has extra [
+  $first = array_shift($exploaded);
+  $first = trim($first);
+  $first = substr($first, 1, strlen($first));
+  array_unshift($exploaded, $first);
+
+  // Last element in array has extra ]
+  $last = array_pop($exploaded);
+  $last = trim($last);
+  $last = substr($last, 0, -1);
+  array_push($exploaded, $last);
+
+  // All items in $exploaded are missing [ and ]
+  $trimmed = [];
+  foreach($exploaded as $part) {
+    $part = trim($part);
+    $part = '[' . $part . ']';
+    array_push($trimmed, $part);
+  }
+
+  return $trimmed;
 }
