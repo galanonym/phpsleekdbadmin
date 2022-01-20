@@ -27,7 +27,7 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 1.  Rename `phpsleekdbadmin.config.sample.php` into `phpsleekdbadmin.config.php`
 2.  Open `phpsleekdbadmin.config.php` (or `phpsleekdbadmin.php`) in
     a text editor.
-3.  Specify the directory as the value of the `$directory` variable. 
+3.  Specify the directory as the value of the `$directory` variable.
 4.  Modify the `$password` variable to be the password used for gaining access
     to the phpSleekDBAdmin tool.
 5.  Open a web browser and navigate to the `phpsleekdbadmin/phpsleekdbadmin.php` file. You will be prompted to enter a password. Use the same password you set in step 4.
@@ -36,6 +36,13 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 
 ![alt text](https://github.com/galanonym/phpsleekdbadmin/blob/main/screenshot.png?raw=true)
 
-## Warning
+## Changelog
 
-This library is using `eval()` for running queries. We filter out `;` but it may still be a security hole. Do not use in production. 
+0.2.0 (2022-01-20)
+- feature    Removed eval()
+- feature    Add support for updateOrInsert() and updateOrInsertMany()
+- issue #1   Use microtime() directly
+
+0.1.0 (2022-01-18)
+- Initial release
+

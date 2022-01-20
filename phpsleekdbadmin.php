@@ -1,8 +1,8 @@
 <?php
 //	Project: phpSleekDBAdmin (https://kalis.no)
-//	Version: 0.1.0
+//	Version: 0.2.0
 //	Summary: PHP-based admin tool to manage SQLite2 and SQLite3 databases on the web
-//	Last updated: 2022-01-18
+//	Last updated: 2022-01-20
 //	Developers:
 //	   Matteus Kalis (post [-at-] kalis [-dot-] no)
 //
@@ -394,16 +394,15 @@ function render_view_query() {
       $data = $db_store->removeFieldsById($id, $fieldsToRemove);
     }
 
-    if ($function_name === 'deleteById') {
-      $id = $query_param_1;
-      $data = $db_store->deleteById($id);
-    }
-
     if ($function_name === 'deleteBy') {
       $criteria = @$str2arr->scan($query_param_1);
       $data = $db_store->deleteBy($criteria);
     }
 
+    if ($function_name === 'deleteById') {
+      $id = $query_param_1;
+      $data = $db_store->deleteById($id);
+    }
   } catch (Throwable $e) {
     $data = $e->getMessage();
   }
@@ -442,7 +441,7 @@ function render_view_query() {
         <input type="hidden" name="action" value="<?php echo $action; ?>">
         <div class="seperator"></div>
 
-        <code><span style="font-size: 11px;">Method name</span></code>
+        <code><span style="font-size: 11px;">Method name - Hint: <span data-hint></span></span></code>
         <div style="height: 2px;"></div>
         <select data-select name="function_name">
           <option value="findAll" <?php if ($function_name === 'findAll') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;findAll()</option>
@@ -457,11 +456,11 @@ function render_view_query() {
           <option value="updateOrInsert" <?php if ($function_name === 'updateOrInsert') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;updateOrInsert()</option>
           <option value="updateOrInsertMany" <?php if ($function_name === 'updateOrInsertMany') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;updateOrInsertMany()</option>
           <option value="removeFieldsById" <?php if ($function_name === 'removeFieldsById') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;removeFieldsById()</option>
-          <option value="deleteById" <?php if ($function_name === 'deleteById') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;deleteById()</option>
           <option value="deleteBy" <?php if ($function_name === 'deleteBy') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;deleteBy()</option>
+          <option value="deleteById" <?php if ($function_name === 'deleteById') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;deleteById()</option>
         </select>
 
-         <div style="display: none;" data-function-param-1>
+        <div style="display: none;" data-function-param-1>
           <div class="seperator"></div>
           <code style="font-size: 11px;">Method parameter 1 - Type: array $orderBy - Example: ["name" =&gt; "asc"]</code>
           <div style="height: 2px;"></div>
@@ -556,12 +555,17 @@ function render_view_query() {
 
           if (isFirstLoad) {
             $option = $('option[value=' + functionName + ']');
-            $option.attr('selected','selected');
+            $option.prop('selected', true);
+            console.log('isFirstLoad', isFirstLoad);
+            console.log('functionName', functionName);
+            console.log('$option', $option);
           }
 
           var value = $option.val();
 
           if (value === 'findAll') {
+            $('[data-hint]').html('Get all documents.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $orderBy - Example: ["name" =&gt; "asc"]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
 
@@ -573,11 +577,15 @@ function render_view_query() {
           }
 
           if (value === 'findById') {
+            $('[data-hint]').html('Get a single document by _id.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
           }
 
           if (value === 'findBy') {
+            $('[data-hint]').html('Get one or multiple documents by chosen criteria.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $criteria - Example: ["author", "=", "Mike"]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
 
@@ -592,25 +600,33 @@ function render_view_query() {
           }
 
           if (value === 'findOneBy') {
+            $('[data-hint]').html('Get one document by chosen criteria.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $criteria - Example: ["author", "=", "Mike"]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
           }
 
           if (value === 'count') {
-            // No params
+            $('[data-hint]').html('Get the amount of all documents stored.');
           }
 
           if (value === 'insert') {
+            $('[data-hint]').html('Insert a single document.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $data - Example: ["name" => "Josh", "age" => 23, "city" => "london"]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
           }
 
           if (value === 'insertMany') {
+            $('[data-hint]').html('Insert multiple documents.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $data - Example: [ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
           }
 
           if (value === 'updateById') {
+            $('[data-hint]').html('Update parts of a document.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
 
@@ -619,12 +635,16 @@ function render_view_query() {
           }
 
           if (value === 'update') {
+            $('[data-hint]').html('Update a whole document.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $updatable - Example: [ ["_id" => 12, "title" => "SleekDB rocks!", ...], ["_id" => 13, "title" => "Multiple Updates", ...], ... ]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
           }
 
 
           if (value === 'updateOrInsert') {
+            $('[data-hint]').html('Update or insert one whole document.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $data - Example: ["_id" => 23, "name" => "John", ...  ]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
 
@@ -633,6 +653,8 @@ function render_view_query() {
           }
 
           if (value === 'updateOrInsertMany') {
+            $('[data-hint]').html('Update or insert multiple whole documents.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $data - Example: [ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
 
@@ -641,6 +663,8 @@ function render_view_query() {
           }
 
           if (value === 'removeFieldsById') {
+            $('[data-hint]').html('Remove parts of a document.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
 
@@ -648,14 +672,18 @@ function render_view_query() {
             $('[data-function-param-2]').find('input').val(queryParam2 && isFirstLoad ? queryParam2 : '[]');
           }
 
-          if (value === 'deleteById') {
-            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
-            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
-          }
-
           if (value === 'deleteBy') {
+            $('[data-help]').html('Delete one or multiple documents by chosen criteria.');
+
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $criteria - Example: ["name", "=", "Joshua Edwards"]]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+          }
+
+          if (value === 'deleteById') {
+            $('[data-hint]').html('Delete one document by _id.');
+
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
           }
         }
 
@@ -746,7 +774,7 @@ function render_html($stores, $html) {
         <div class="display-flex">
           <aside class="margins" style="flex: initial; width: 260px; border-right: 1px solid #ccc;">
             <span class="logo">phpSleekDBAdmin</span>
-            <span class="version">v0.1.0</span>
+            <span class="version">v0.2.0</span>
             <div style="height: 7px;"></div>
             <a href="https://github.com/galanonym/phpsleekdbadmin" target="_blank">Documentation</a>
             <span> | </span>
@@ -805,7 +833,7 @@ function render_view_login() {
         <div style="width: 250px; margin: 0 auto;">
           <div class="seperator"></div>
           <span class="logo">phpSleekDBAdmin</span>
-          <span class="version">v0.1.0</span>
+          <span class="version">v0.2.0</span>
           <div class="seperator"></div>
           <div class="seperator"></div>
           <form method="POST">
