@@ -356,7 +356,7 @@ function render_view_query() {
 
     if ($function_name === 'update') {
       // $str2arr does not support multiple arrays in array
-      $converted = convert_multiple_array_string($query_param_1);
+      $converted = @convert_multiple_array_string($query_param_1);
 
       $updatable_array = [];
       foreach($converted as $updatable) {
@@ -375,7 +375,7 @@ function render_view_query() {
 
     if ($function_name === 'updateOrInsertMany') {
       // $str2arr does not support multiple arrays in array
-      $converted = convert_multiple_array_string($query_param_1);
+      $converted = @convert_multiple_array_string($query_param_1);
 
       $insertable_array = [];
       foreach($converted as $insertable) {
@@ -632,7 +632,7 @@ function render_view_query() {
           }
 
           if (value === 'update') {
-            $('[data-hint]').html('Update multiple whole documents.');
+            $('[data-hint]').html('Update multiple whole documents. Must have _ids defined.');
 
             $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $updatable - Example: [ ["_id" => 12, "title" => "SleekDB rocks!", ...], ["_id" => 13, "title" => "Multiple Updates", ...], ... ]');
             $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
