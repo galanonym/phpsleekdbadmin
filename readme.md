@@ -39,7 +39,7 @@ git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && 
 ## Changelog
 
 0.2.0 (2022-01-20)
-- feature - Removed eval()
+- feature - eval() is no longer used, input for every parameter and simple array parser is used instead
 - feature - Added support for updateOrInsert() and updateOrInsertMany()
 - issue #1 - Use microtime() directly
 
