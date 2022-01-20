@@ -26,7 +26,7 @@ phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Follo
 ## Changelog
 
 0.2.1 (2022-01-21)
-- feature - Install through .zip file, not composer 
+- feature - Install through .zip file, not git + composer 
 
 0.2.0 (2022-01-20)
 - feature - eval() is no longer used, input for every parameter and simple array parser is used instead
