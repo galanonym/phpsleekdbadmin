@@ -15,9 +15,9 @@ phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Follo
 2. Extract into your webroot into `/phpsleekdbadmin/` directory
 3. Rename `phpsleekdbadmin.config.sample.php` into `phpsleekdbadmin.config.php`
 4. Open `phpsleekdbadmin.config.php` in a text editor.
-5. Specify the directory as the value of the `$directory` variable.
+5. Specify the SleekDB database directory as the value of the `$directory` variable.
 6. Modify the `$password` variable to be the password used for gaining access to the phpSleekDBAdmin tool.
-7. Open a web browser and navigate to the `phpsleekdbadmin/phpsleekdbadmin.php` file. You will be prompted to enter a password.
+7. Open a web browser and navigate to the `phpsleekdbadmin/phpsleekdbadmin.php` file on your webserver. You will be prompted to enter a password.
 
 ## Screenshot
 
