@@ -184,10 +184,12 @@ function render_view_browse() {
 
   $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
 
-  $queryTimer = new MicroTimer();
+  $time_start = microtime(true);
+
   $data = $db_store->findAll([$order_by => $order], $limit, $offset);
   $count = $db_store->count();
-  $queryTimer->stop();
+
+  $time_query = round(microtime(true) - $time_start, 4);
 
   ob_start();
     ?>
@@ -196,7 +198,7 @@ function render_view_browse() {
       <div class="seperator"></div>
       <b>Browse</b>
       <span> | </span>
-      <a href="?store=<?php echo urlencode($store); ?>&action=view_query&query=findAll([]%2C+50)"><b>Query</b></a>
+      <a href="?store=<?php echo urlencode($store); ?>&action=view_query&function_name=findAll&query_param_1=[]&query_param_2=<?php echo $limit_default; ?>&query_param_3=0"><b>Query</b></a>
       <span> | </span>
       <a href="?store=<?php echo urlencode($store); ?>&action=view_drop"><b>Drop</b></a>
       <div class="seperator"></div>
@@ -223,7 +225,7 @@ function render_view_browse() {
       <?php if ($count === 0 OR $offset > $count) { ?>
         <p><b>There are no documents in the store for the range you selected, Total: <?php echo $count; ?></b></p>
       <?php } else { ?>
-        <p><b>Showing documents <?php echo $offset; ?> - <?php if ($offset + $limit <= $count) { echo $offset + $limit; } else { echo $count; } ?>, Total: <?php echo $count; ?> (Query took <?php echo $queryTimer; ?> sec)</b></p>
+        <p><b>Showing documents <?php echo $offset; ?> - <?php if ($offset + $limit <= $count) { echo $offset + $limit; } else { echo $count; } ?>, Total: <?php echo $count; ?> (Query took <?php echo $time_query; ?> sec)</b></p>
       <?php } ?>
       <div class="seperator"></div>
       <code style="font-size: 11px;">$store-&gt;findAll(["<?php echo $order_by; ?>" =&gt; "<?php echo $order; ?>"], <?php echo $limit; ?>, <?php echo $offset; ?>)</code>
@@ -282,32 +284,53 @@ function render_view_query() {
     return '';
   }
 
-  $query = $_GET['query'] ?? '';
-
-  $query = rtrim($query, ';');
+  $function_name = $_GET['function_name'] ?? '';
+  $query_param_1 = $_GET['query_param_1'] ?? '';
+  $query_param_2 = $_GET['query_param_2'] ?? '';
+  $query_param_3 = $_GET['query_param_3'] ?? '';
+  $query_param_4 = $_GET['query_param_4'] ?? '';
 
   $count = 0;
   $data = [];
 
-  $queryTimer = new MicroTimer();
+  $time_start = microtime(true);
 
-  if ($query) {
-    $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
+  $tokenScanner = new ArrayTokenScanner();
+  $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
 
-    try {
-      $data = @eval('return $db_store->' . $query . ';');
-    } catch (Throwable $e) {
-      $data = $e->getMessage();
+  try {
+
+    if ($function_name === 'findAll') {
+      // first param is array
+      $order_by = $tokenScanner->scan($query_param_1);
+      $limit = intval($query_param_2);
+      $offset = intval($query_param_3);
+      $data = $db_store->findAll($order_by, $limit, $offset);
     }
 
-    if (isset($data[0]) AND is_array($data[0])) {
-      $count = count($data);
-    } else {
-      $count = 1;
+    if ($function_name === 'findById') {
+      $id = $query_param_1;
+      $data = $db_store->findById($id);
     }
+
+  } catch (Throwable $e) {
+    $data = $e->getMessage();
   }
 
-  $queryTimer->stop();
+  if (isset($data[0]) AND is_array($data[0])) {
+    $count = count($data);
+  } else {
+    $count = 1;
+  }
+
+  $query = '$' . $store . '->' . $function_name . '(';
+  if ($query_param_1 !== '') { $query .= $query_param_1; }
+  if ($query_param_2 !== '') { $query .= ', ' . $query_param_2; }
+  if ($query_param_3 !== '') { $query .= ', ' . $query_param_3; }
+  if ($query_param_4 !== '') { $query .= ', ' . $query_param_4; }
+  $query .= ')';
+
+  $time_query = round(microtime(true) - $time_start, 4);
 
   ob_start();
     ?>
@@ -328,120 +351,132 @@ function render_view_query() {
         <input type="hidden" name="action" value="<?php echo $action; ?>">
         <div class="seperator"></div>
 
-        <div data-help class="help"></div>
+        <code><span style="font-size: 11px;">Method name</span></code>
+        <div style="height: 2px;"></div>
+        <select data-select name="function_name">
+          <option value="findAll" <?php if ($function_name === 'findAll') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;findAll()</option>
+          <option value="findById" <?php if ($function_name === 'findById') { ?>selected<?php } ?> >$<?php echo $store; ?>-&gt;findById()</option>
 
-        <div class="display-flex">
-          <div style="flex: initial;">
-            <code><span style="vertical-align: -3px; line-height: 27px; font-size: 14px; padding-right: 5px;">$<?php echo $store; ?>-&gt;</span></code>
-          </div>
-          <div style="flex: 1;">
-            <input data-input style="width: 100%;" type="text" name="query" value="<?php if ($query) { echo htmlspecialchars($query); } ?>">
-          </div>
-          <div style="flex: initial;">
-            <select data-select>
-              <option value="">... functions</option>
+          <option
+            value="findById()"
+            data-help-text="function findById(int|string $id): array|null"
+            data-help-example='findById(1);'
+            <?php if (str_contains($function_name, 'findById(')) { ?>selected<?php } ?>
+          >findById()</option>
 
-              <option
-                value="findAll([], <?php echo $limit_default; ?>)"
-                data-help-text="function findAll(array $orderBy = null, int $limit = null, int $offset = null): array"
-                data-help-example='findAll(["name" => "asc"], 30, 0)'
-                <?php if (str_contains($query, 'findAll(')) { ?>selected<?php } ?>
-              >findAll()</option>
+          <option
+            value="findBy([], <?php echo $limit_default; ?>)"
+            data-help-text="function findBy(array $criteria, array $orderBy = null, int $limit = null, int $offset = null): array"
+            data-help-example='findBy(["author", "=", "John"], ["title" => "asc"], 30, 0);'
+            <?php if (str_contains($function_name, 'findBy(')) { ?>selected<?php } ?>
+          >findBy()</option>
 
-              <option
-                value="findById()"
-                data-help-text="function findById(int|string $id): array|null"
-                data-help-example='findById(1);'
-                <?php if (str_contains($query, 'findById(')) { ?>selected<?php } ?>
-              >findById()</option>
+          <option
+            value="findOneBy([])"
+            data-help-text="function findOneBy(array $criteria): array|null"
+            data-help-example='findOneBy(["author", "=", "Mike"]);'
+            <?php if (str_contains($function_name, 'findOneBy(')) { ?>selected<?php } ?>
+          >findOneBy()</option>
 
-              <option
-                value="findBy([], <?php echo $limit_default; ?>)"
-                data-help-text="function findBy(array $criteria, array $orderBy = null, int $limit = null, int $offset = null): array"
-                data-help-example='findBy(["author", "=", "John"], ["title" => "asc"], 30, 0);'
-                <?php if (str_contains($query, 'findBy(')) { ?>selected<?php } ?>
-              >findBy()</option>
+          <option
+            value="count()"
+            data-help-text="function count(): int"
+            data-help-example='count()'
+            <?php if (str_contains($function_name, 'count(')) { ?>selected<?php } ?>
+          >count()</option>
 
-              <option
-                value="findOneBy([])"
-                data-help-text="function findOneBy(array $criteria): array|null"
-                data-help-example='findOneBy(["author", "=", "Mike"]);'
-                <?php if (str_contains($query, 'findOneBy(')) { ?>selected<?php } ?>
-              >findOneBy()</option>
+          <option
+            value="insert([])"
+            data-help-text="function insert(array $data): array"
+            data-help-example='insert(["name" => "Josh", "age" => 23, "city" => "london"]);'
+            <?php if (str_contains($function_name, 'insert(')) { ?>selected<?php } ?>
+          >insert()</option>
 
-              <option
-                value="count()"
-                data-help-text="function count(): int"
-                data-help-example='count()'
-                <?php if (str_contains($query, 'count(')) { ?>selected<?php } ?>
-              >count()</option>
+          <option
+            value="insertMany()"
+            data-help-text="function insertMany(array $data): array"
+            data-help-example='insertMany([ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]);'
+            <?php if (str_contains($function_name, 'insertMany(')) { ?>selected<?php } ?>
+          >insertMany()</option>
 
-              <option
-                value="insert([])"
-                data-help-text="function insert(array $data): array"
-                data-help-example='insert(["name" => "Josh", "age" => 23, "city" => "london"]);'
-                <?php if (str_contains($query, 'insert(')) { ?>selected<?php } ?>
-              >insert()</option>
+          <option
+            value="updateById()"
+            data-help-text="function updateById(int|string $id, array $updatable): array|false"
+            data-help-example='updateById(24, [ "address.street" => "first street" ]);'
+            <?php if (str_contains($function_name, 'updateById(')) { ?>selected<?php } ?>
+          >updateById()</option>
 
-              <option
-                value="insertMany()"
-                data-help-text="function insertMany(array $data): array"
-                data-help-example='insertMany([ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19], ... ]);'
-                <?php if (str_contains($query, 'insertMany(')) { ?>selected<?php } ?>
-              >insertMany()</option>
+          <option
+            value="update()"
+            data-help-text="function update(array $updatable): bool;"
+            data-help-example='update([ ["_id" => 12, "title" => "SleekDB rocks!", ...], ["_id" => 13, "title" => "Multiple Updates", ...], ... ])'
+            <?php if (str_contains($function_name, 'update(')) { ?>selected<?php } ?>
+          >update()</option>
 
-              <option
-                value="updateById()"
-                data-help-text="function updateById(int|string $id, array $updatable): array|false"
-                data-help-example='updateById(24, [ "address.street" => "first street" ]);'
-                <?php if (str_contains($query, 'updateById(')) { ?>selected<?php } ?>
-              >updateById()</option>
+          <option
+            value="removeFieldsById()"
+            data-help-text="function removeFieldsById(int|string $id, array $fieldsToRemove): array|false"
+            data-help-example='removeFieldsById(24, [ "name", "age" ]);'
+            <?php if (str_contains($function_name, 'removeFieldsById(')) { ?>selected<?php } ?>
+          >removeFieldsById()</option>
 
-              <option
-                value="update()"
-                data-help-text="function update(array $updatable): bool;"
-                data-help-example='update([ ["_id" => 12, "title" => "SleekDB rocks!", ...], ["_id" => 13, "title" => "Multiple Updates", ...], ... ])'
-                <?php if (str_contains($query, 'update(')) { ?>selected<?php } ?>
-              >update()</option>
+          <option
+            value="deleteBy([])"
+            data-help-text="function deleteBy(array $criteria, int $returnOption = Query::DELETE_RETURN_BOOL): array|bool|int"
+            data-help-example='deleteBy(["name", "=", "Joshua Edwards"]);'
+            <?php if (str_contains($function_name, 'deleteBy(')) { ?>selected<?php } ?>
+          >deleteBy()</option>
 
-              <option
-                value="removeFieldsById()"
-                data-help-text="function removeFieldsById(int|string $id, array $fieldsToRemove): array|false"
-                data-help-example='removeFieldsById(24, [ "name", "age" ]);'
-                <?php if (str_contains($query, 'removeFieldsById(')) { ?>selected<?php } ?>
-              >removeFieldsById()</option>
+          <option
+            value="deleteById()"
+            data-help-text="function deleteById(int|string $id): bool"
+            data-help-example='deleteById(12);'
+            <?php if (str_contains($function_name, 'deleteById(')) { ?>selected<?php } ?>
+          >deleteById()</option>
+        </select>
 
-              <option
-                value="deleteBy([])"
-                data-help-text="function deleteBy(array $criteria, int $returnOption = Query::DELETE_RETURN_BOOL): array|bool|int"
-                data-help-example='deleteBy(["name", "=", "Joshua Edwards"]);'
-                <?php if (str_contains($query, 'deleteBy(')) { ?>selected<?php } ?>
-              >deleteBy()</option>
-
-              <option
-                value="deleteById()"
-                data-help-text="function deleteById(int|string $id): bool"
-                data-help-example='deleteById(12);'
-                <?php if (str_contains($query, 'deleteById(')) { ?>selected<?php } ?>
-              >deleteById()</option>
-            </select>
-          </div>
-          <div style="flex: initial;">
-            <button type="submit">Go</button>
-          </div>
+         <div style="display: none;" data-function-param-1>
+          <div class="seperator"></div>
+          <code style="font-size: 11px;">Method parameter 1 - Type: array $orderBy - Example: ["name" =&gt; "asc"]</code>
+          <div style="height: 2px;"></div>
+          <input data-input style="width: 100%;" type="text" name="query_param_1" value="">
         </div>
+
+         <div style="display: none;" data-function-param-2>
+          <div class="seperator"></div>
+          <code style="font-size: 11px;">Method parameter 2 - Type: int $limit - Example: 50</code>
+          <div style="height: 2px;"></div>
+          <input type="text" style="width: 100%" name="query_param_2" value="">
+        </div>
+
+         <div style="display: none;" data-function-param-3>
+          <div class="seperator"></div>
+          <code style="font-size: 11px;">Method parameter 3 - Type: int $offset - Example: 0</code>
+          <div style="height: 2px;"></div>
+          <input type="text" style="width: 100%" name="query_param_3" value="">
+        </div>
+
+         <div style="display: none;" data-function-param-4>
+          <div class="seperator"></div>
+          <code style="font-size: 11px;">Method parameter 4 - Type: int $offset - Example: 0</code>
+          <div style="height: 2px;"></div>
+          <input type="text" style="width: 100%" name="query_param_4" value="">
+        </div>
+
+        <div class="seperator"></div>
+        <button type="submit">Go</button>
       </form>
 
       <div class="seperator"></div>
       <div class="seperator"></div>
 
-      <p><b>Showing <?php echo $count; ?> document(s). (Query took <?php echo $queryTimer; ?> sec)</b></p>
+      <p><b>Showing <?php echo $count; ?> document(s). (Query took <?php echo $time_query; ?> sec)</b></p>
       <div class="seperator"></div>
 
       <?php if ($count === 0) { ?>
         <p><code style="font-size: 11px;">No results.</code></p>
       <?php } else { ?>
-      <p><code style="font-size: 11px;">$<?php echo $store; ?>-><?php echo htmlspecialchars($query); ?></code></p>
+        <p><code style="font-size: 11px;"><?php echo htmlspecialchars($query); ?></code></p>
       <?php } ?>
 
       <style>
@@ -474,33 +509,68 @@ function render_view_query() {
 
       <script>
         'use strict';
-        var query = '<?php echo base64_encode($query); ?>';
-        query = b64_to_utf8(query);
+        var functionName = '<?php echo $function_name; ?>';
+        var limitDefault = '<?php echo $limit_default; ?>';
 
-        $(document).ready(function() { showHelp(query, true) });
-        $('[data-select]').on('change', function() { showHelp(query, false); });
+        var queryParam1 = b64_to_utf8('<?php echo base64_encode($query_param_1); ?>');
+        var queryParam2 = b64_to_utf8('<?php echo base64_encode($query_param_2); ?>');
+        var queryParam3 = b64_to_utf8('<?php echo base64_encode($query_param_3); ?>');
+        var queryParam4 = b64_to_utf8('<?php echo base64_encode($query_param_4); ?>');
 
-        function showHelp(query, isFirstLoad) {
+        $(document).ready(function() { viewInputs(true) });
+        $('[data-select]').on('change', function() { viewInputs(false); });
+
+        function viewInputs(isFirstLoad) {
+          $('[data-function-param-1]').hide().find('input').val('');
+          $('[data-function-param-2]').hide().find('input').val('');
+          $('[data-function-param-3]').hide().find('input').val('');
+          $('[data-function-param-4]').hide().find('input').val('');
+
           var $option = $('[data-select]').find('option:selected');
-          if ($option.val() === '') { return; }
-          if (query && isFirstLoad) {
-            $('[data-input]').val(query);
+
+          if (isFirstLoad) {
+            $option = $('option[value=' + functionName + ']');
+            $option.attr('selected','selected');
           }
-          if (!isFirstLoad) {
-            $('[data-input]').val($option.val());
+
+          var value = $option.val();
+
+          if (value === 'findAll') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: array $orderBy - Example: ["name" =&gt; "asc"]');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '[]').caretTo('[', true);
+
+            $('[data-function-param-2]').show().find('code').html('Method parameter 2 - Type: int $limit - Example: 50');
+            $('[data-function-param-2]').find('input').val(queryParam2 && isFirstLoad ? queryParam2 : limitDefault);
+
+            $('[data-function-param-3]').show().find('code').html('Method parameter 3 - Type: int $offset - Example: 0');
+            $('[data-function-param-3]').find('input').val(0);
           }
-          $('[data-input]').caretTo('(', true);
-          if ($('[data-input]').val().includes('[')) {
-            $('[data-input]').caretTo('[', true);
+
+          if (value === 'findById') {
+            $('[data-function-param-1]').show().find('code').html('Method parameter 1 - Type: int|string $id - Example: 1');
+            $('[data-function-param-1]').find('input').val(queryParam1 && isFirstLoad ? queryParam1 : '').caretTo('', true);
           }
-          var text = $option.attr('data-help-text');
-          var example = $option.attr('data-help-example');
-          if (text && example) {
-            $('[data-help]').html('<small><b>Description:</b></small><br>' + text + '<br><br><small><b>Example:</b></small><br>' + example);
-            $('[data-help]').show();
-          } else {
-            $('[data-help]').hide();
-          }
+
+          console.log(value);
+          /* if (isFirstLoad) { */
+          /*   $('[data-input]').val(query); */
+          /* } */
+          /* if (!isFirstLoad) { */
+          /*   $('[data-input]').val($option.val()); */
+          /* } */
+          /* $('[data-input]').caretTo('(', true); */
+          /* if ($('[data-input]').val().includes('[')) { */
+          /*   $('[data-input]').caretTo('[', true); */
+          /* } */
+          /* var text = $option.attr('data-help-text'); */
+          /* var example = $option.attr('data-help-example'); */
+          /* if (text && example) { */
+          /*   $('[data-help]').html('<small><b>Description:</b></small><br>' + text + '<br><br><small><b>Example:</b></small><br>' + example); */
+          /*   $('[data-help]').show(); */
+          /* } else { */
+          /*   $('[data-help]').hide(); */
+          /* } */
+
         }
 
         function b64_to_utf8( str ) {
@@ -545,7 +615,7 @@ function render_view_drop() {
       <div class="seperator"></div>
       <a href="?store=<?php echo urlencode($store); ?>&action=view_browse&limit=<?php echo $limit_default; ?>&offset=0&order=ASC&order_by=_id"><b>Browse</b></a>
       <span> | </span>
-      <a href="?store=<?php echo urlencode($store); ?>&action=view_query&query=findAll([]%2C+50)"><b>Query</b></a>
+      <a href="?store=<?php echo urlencode($store); ?>&action=view_query&function_name=findAll"><b>Query</b></a>
       <span> | </span>
       <b>Drop</b>
       <div class="seperator"></div>
@@ -603,7 +673,7 @@ function render_html($stores, $html) {
             <b>Database:</b> <span><?php echo $directory; ?></span>
             <div class="seperator"></div>
             <?php foreach ($stores as $store) { ?>
-              <p><a href="?store=<?php echo urlencode($store); ?>&action=<?php echo urlencode($action); ?>&limit=<?php echo $limit_default; ?>&offset=0&order=ASC&order_by=_id<?php if ($action === 'view_query') { ?>&query=findAll([]%2C+50)<?php } ?>">[Store] <?php echo $store; ?></a></p>
+              <p><a href="?store=<?php echo urlencode($store); ?>&action=<?php echo urlencode($action); ?><?php if ($action === 'view_query') { ?>&function_name=findAll&query_param_1=[]&query_param_2=<?php echo $limit_default; ?>&query_param_3=0<?php } ?>">[Store] <?php echo $store; ?></a></p>
             <?php } ?>
             <div class="seperator"></div>
             <div class="seperator"></div>
@@ -783,16 +853,6 @@ function render_css() {
       .narrow {
         width: 100px;
       }
-
-      .help {
-        display: none;
-        margin-top: 10px;
-        margin-bottom: 20px;
-        padding: 15px;
-        background: #f9f9f9;
-        border: 1px solid #ccc;
-        border-radius: 2px;
-      }
     </style>
   <?php
 }
@@ -879,4 +939,273 @@ function render_jquery_caret() {
     }(jQuery));
     </script>
 <?php
+}
+
+/**
+ * A class used convert string representations or php arrays to an array without using eval()
+ * Using: https://stackoverflow.com/a/30833466/3202588
+ * With some custom code added
+ */
+class ArrayTokenScanner
+{
+    /** @var array  */
+    protected $arrayKeys = [];
+
+    /**
+     * @param string $string   e.g. array('foo' => 123, 'bar' => [0 => 123, 1 => 12345])
+     *
+     * @return array
+     */
+    public function scan($string)
+    {
+        // Remove whitespace and semi colons
+        $sanitized = trim($string, " \t\n\r\0\x0B;");
+        if (!$string) {
+          return [];
+        }
+
+        if ($string === '[]') {
+          return [];
+        }
+
+        if(preg_match('/^(\[|array\().*(\]|\))$/', $sanitized)) {
+            if($tokens = $this->tokenize("<?php {$sanitized}")) {
+                $this->initialize($tokens);
+                return $this->parse($tokens);
+            }
+        }
+
+        // Given array format is invalid
+        throw new InvalidArgumentException("Invalid array format.");
+    }
+
+    /**
+     * @param array $tokens
+     */
+    protected function initialize(array $tokens)
+    {
+        $this->arrayKeys = [];
+        while($current = current($tokens)) {
+            $next = next($tokens);
+            if(isset($next[0]) AND $next[0] === T_DOUBLE_ARROW) {
+                $this->arrayKeys[] = $current[1];
+            }
+        }
+    }
+
+    /**
+     * @param array $tokens
+     * @return array
+     */
+    protected function parse(array &$tokens)
+    {
+        $array = [];
+        $token = current($tokens);
+        if(in_array($token[0], [T_ARRAY, T_BRACKET_OPEN])) {
+
+            // Is array!
+            $assoc = false;
+            $index = 0;
+            $discriminator = ($token[0] === T_ARRAY) ? T_ARRAY_CLOSE : T_BRACKET_CLOSE;
+            while($token = $this->until($tokens, $discriminator)) {
+
+
+                // Skip arrow ( => )
+                if(in_array($token[0], [T_DOUBLE_ARROW])) {
+                    continue;
+                }
+
+                // Reset associative array key
+                if($token[0] === T_COMMA_SEPARATOR) {
+                    $assoc = false;
+                    continue;
+                }
+
+                // Look for array keys
+                $next = next($tokens);
+                prev($tokens);
+                if($next[0] === T_DOUBLE_ARROW) {
+                    // Is assoc key
+
+                    // Do not surround strings with extra quotes
+                    $token[1] = str_replace('\'', '', $token[1]);
+                    $token[1] = str_replace('"', '', $token[1]);
+
+                    $assoc = $token[1];
+                    if(preg_match('/^-?(0|[1-9][0-9]*)$/', $assoc)) {
+                        $index = $assoc = (int) $assoc;
+                    }
+                    continue;
+                }
+
+                // Parse array contents recursively
+                if(in_array($token[0], [T_ARRAY, T_BRACKET_OPEN])) {
+                    $array[($assoc !== false) ? $assoc : $this->createKey($index)] = $this->parse($tokens);
+                    continue;
+                }
+
+                // Parse atomic string
+                if(in_array($token[0], [T_STRING, T_NUM_STRING, T_CONSTANT_ENCAPSED_STRING])) {
+
+                    // Do not surround strings with extra quotes
+                    $token[1] = str_replace('\'', '', $token[1]);
+                    $token[1] = str_replace('"', '', $token[1]);
+
+                    $array[($assoc !== false) ? $assoc : $this->createKey($index)] = $this->parseAtomic($token[1]);
+                }
+
+                // Parse atomic number
+                if(in_array($token[0], [T_LNUMBER, T_DNUMBER])) {
+
+                    // Check if number is negative
+                    $prev = prev($tokens);
+                    $value = $token[1];
+                    if($prev[0] === T_MINUS) {
+                        $value = "-{$value}";
+                    }
+                    next($tokens);
+
+                    $array[($assoc !== false) ? $assoc : $this->createKey($index)] = $this->parseAtomic($value);
+                }
+
+                // Increment index unless a associative key is used. In this case we want too reuse the current value.
+                if(!is_string($assoc)) {
+                    $index++;
+                }
+            }
+
+            return $array;
+        }
+    }
+
+    /**
+     * @param array $tokens
+     * @param int|string $discriminator
+     *
+     * @return array|false
+     */
+    protected function until(array &$tokens, $discriminator)
+    {
+        $next = next($tokens);
+        if($next === false or $next[0] === $discriminator) {
+            return false;
+        }
+
+        return $next;
+    }
+
+    protected function createKey(&$index)
+    {
+        do {
+            if(!in_array($index, $this->arrayKeys, true)) {
+                return $index;
+            }
+        } while(++$index);
+    }
+
+    /**
+     * @param $string
+     * @return array|false
+     */
+    protected function tokenize($string)
+    {
+        $tokens = token_get_all($string);
+        if(is_array($tokens)) {
+
+            // Filter tokens
+            $tokens = array_values(array_filter($tokens, [$this, 'accept']));
+
+            // Normalize token format, make syntax characters look like tokens for consistent parsing
+            return $this->normalize($tokens);
+
+        }
+
+        return false;
+    }
+
+    /**
+     * Method used to accept or deny tokens so that we only have to deal with the allowed tokens
+     *
+     * @param array|string $value    A token or syntax character
+     * @return bool
+     */
+    protected function accept($value)
+    {
+        if(is_string($value)) {
+            // Allowed syntax characters: comma's and brackets.
+            return in_array($value, [',', '[', ']', ')', '-']);
+        }
+        if(!in_array($value[0], [T_ARRAY, T_CONSTANT_ENCAPSED_STRING, T_DOUBLE_ARROW, T_STRING, T_NUM_STRING, T_LNUMBER, T_DNUMBER])) {
+            // Token did not match requirement. The token is not listed in the collection above.
+            return false;
+        }
+        // Token is accepted.
+        return true;
+    }
+
+    /**
+     * Normalize tokens so that each allowed syntax character looks like a token for consistent parsing.
+     *
+     * @param array $tokens
+     *
+     * @return array
+     */
+    protected function normalize(array $tokens)
+    {
+        // Define some constants for consistency. These characters are not "real" tokens.
+        defined('T_MINUS')           ?: define('T_MINUS',           '-');
+        defined('T_BRACKET_OPEN')    ?: define('T_BRACKET_OPEN',    '[');
+        defined('T_BRACKET_CLOSE')   ?: define('T_BRACKET_CLOSE',   ']');
+        defined('T_COMMA_SEPARATOR') ?: define('T_COMMA_SEPARATOR', ',');
+        defined('T_ARRAY_CLOSE')     ?: define('T_ARRAY_CLOSE',     ')');
+
+        // Normalize the token array
+        return array_map( function($token) {
+
+            // If the token is a syntax character ($token[0] will be string) than use the token (= $token[0]) as value (= $token[1]) as well.
+            return [
+                0 => $token[0],
+                1 => (is_string($token[0])) ? $token[0] : $token[1]
+            ];
+
+        }, $tokens);
+    }
+
+    /**
+     * @param $value
+     *
+     * @return mixed
+     */
+    protected function parseAtomic($value)
+    {
+        // If the parameter type is a string than it will be enclosed with quotes
+        if(preg_match('/^["\'].*["\']$/', $value)) {
+            // is (already) a string
+            return $value;
+        }
+
+        // Parse integer
+        if(preg_match('/^-?(0|[1-9][0-9]*)$/', $value)) {
+            return (int) $value;
+        }
+
+        // Parse other sorts of numeric values (floats, scientific notation etc)
+        if(is_numeric($value)) {
+            return  (float) $value;
+        }
+
+        // Parse bool
+        if(in_array(strtolower($value), ['true', 'false'])) {
+            return ($value == 'true') ? true : false;
+        }
+
+        // Parse null
+        if(strtolower($value) === 'null') {
+            return null;
+        }
+
+        // Use string for any remaining values.
+        // For example, bitsets are not supported. 0x2,1x2 etc
+        return $value;
+    }
 }
