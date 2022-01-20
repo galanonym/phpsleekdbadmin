@@ -11,15 +11,9 @@ phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Follo
 
 ## Installation
 
-Go to your webroot
-```bash
-cd /www/webroot
-```
+[Download newest release here](https://github.com/galanonym/phpsleekdbadmin/releases/download/v0.2.1/phpsleekdbadmin_v0.2.1.zip)
 
-Clone the repo and install dependencies with composer
-```bash
-git clone git@github.com:galanonym/phpsleekdbadmin.git && cd phpsleekdbadmin && composer install
-```
+Extract into your webroot into /phpsleekdbadmin/ directory
 
 ## Configuration
 
