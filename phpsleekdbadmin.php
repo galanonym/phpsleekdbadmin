@@ -1,8 +1,8 @@
 <?php
 //	Project: phpSleekDBAdmin (https://kalis.no)
-//	Version: 0.2.1
+//	Version: 0.2.2
 //	Summary: PHP-based admin tool to manage SQLite2 and SQLite3 databases on the web
-//	Last updated: 2022-01-21
+//	Last updated: 2022-01-22
 //	Developers:
 //	   Matteus Kalis (post [-at-] kalis [-dot-] no)
 //
@@ -67,7 +67,7 @@ if ($directory[strlen($directory)-1] != '/') {
   $directory .= '/';
 }
 
-start();
+// start() is runned at the bottom of this file
 function start() {
   authenticate();
 
@@ -784,7 +784,7 @@ function render_html($stores, $html) {
         <div class="display-flex">
           <aside class="margins" style="flex: initial; width: 260px; border-right: 1px solid #ccc;">
             <span class="logo">phpSleekDBAdmin</span>
-            <span class="version">v0.2.1</span>
+            <span class="version">v0.2.2</span>
             <div style="height: 7px;"></div>
             <a href="https://github.com/galanonym/phpsleekdbadmin" target="_blank">Documentation</a>
             <span> | </span>
@@ -843,7 +843,7 @@ function render_view_login() {
         <div style="width: 250px; margin: 0 auto;">
           <div class="seperator"></div>
           <span class="logo">phpSleekDBAdmin</span>
-          <span class="version">v0.2.1</span>
+          <span class="version">v0.2.2</span>
           <div class="seperator"></div>
           <div class="seperator"></div>
           <form method="POST">
@@ -979,28 +979,6 @@ function render_css() {
       }
     </style>
   <?php
-}
-
-class MicroTimer {
-	private $startTime, $stopTime;
-
-	function __construct() {
-		$this->startTime = microtime(true);
-	}
-
-	public function stop() {
-		$this->stopTime = microtime(true);
-	}
-
-	public function elapsed() {
-		if ($this->stopTime)
-			return round($this->stopTime - $this->startTime, 4);
-		return round(microtime(true) - $this->startTime, 4);
-	}
-
-	public function __toString() {
-		return (string) $this->elapsed();
-	}
 }
 
 function render_jquery_caret() {
@@ -1385,3 +1363,5 @@ function convert_multiple_array_string($string) {
 
   return $trimmed;
 }
+
+start();
