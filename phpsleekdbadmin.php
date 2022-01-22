@@ -1,7 +1,7 @@
 <?php
 //	Project: phpSleekDBAdmin (https://kalis.no)
 //	Version: 0.3.0
-//	Summary: PHP-based admin tool to manage SQLite2 and SQLite3 databases on the web
+//	Summary: PHP-based admin tool to manage SleekDB databases on the web
 //	Last updated: 2022-01-22
 //	Developers:
 //	   Matteus Kalis (post [-at-] kalis [-dot-] no)
