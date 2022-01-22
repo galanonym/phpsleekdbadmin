@@ -1,6 +1,6 @@
 <?php
 //	Project: phpSleekDBAdmin (https://kalis.no)
-//	Version: 0.2.2
+//	Version: 0.3.0
 //	Summary: PHP-based admin tool to manage SQLite2 and SQLite3 databases on the web
 //	Last updated: 2022-01-22
 //	Developers:
@@ -55,6 +55,7 @@ use Symfony\Component\VarDumper\Cloner\VarCloner;
 use Symfony\Component\VarDumper\Dumper\CliDumper;
 use Symfony\Component\VarDumper\Dumper\HtmlDumper;
 use Symfony\Component\VarDumper\VarDumper;
+use battye\array_parser\parser;
 
 // Load optional configuration file
 $config_filename = './phpsleekdbadmin.config.php';
@@ -308,13 +309,12 @@ function render_view_query() {
 
   $time_start = microtime(true);
 
-  $str2arr = new ArrayTokenScanner();
   $db_store = new \SleekDB\Store($store, $directory, ['timeout' => false]);
 
   try {
 
     if ($function_name === 'findAll') {
-      $order_by = @$str2arr->scan($query_param_1);
+      $order_by = parser::parse_simple($query_param_1);
       $limit = intval($query_param_2);
       $offset = intval($query_param_3);
       $data = $db_store->findAll($order_by, $limit, $offset);
@@ -326,15 +326,15 @@ function render_view_query() {
     }
 
     if ($function_name === 'findBy') {
-      $criteria = @$str2arr->scan($query_param_1);
-      $order_by = @$str2arr->scan($query_param_2);
+      $criteria = parser::parse_simple($query_param_1);
+      $order_by = parser::parse_simple($query_param_2);
       $limit = intval($query_param_3);
       $offset = intval($query_param_4);
       $data = $db_store->findBy($criteria, $order_by, $limit, $offset);
     }
 
     if ($function_name === 'findOneBy') {
-      $criteria = @$str2arr->scan($query_param_1);
+      $criteria = parser::parse_simple($query_param_1);
       $data = $db_store->findOneBy($criteria);
     }
 
@@ -343,72 +343,48 @@ function render_view_query() {
     }
 
     if ($function_name === 'insert') {
-      $insertable = @$str2arr->scan($query_param_1);
+      $insertable = parser::parse_simple($query_param_1);
       $data = $db_store->insert($insertable);
     }
 
     if ($function_name === 'insertMany') {
-      // $str2arr does not support multiple arrays in array
-      $converted = convert_multiple_array_string($query_param_1);
-
-      $insertable_array = [];
-      foreach($converted as $insertable) {
-        $insertable = @$str2arr->scan($insertable);
-        array_push($insertable_array, $insertable);
-      }
-
-      $data = $db_store->insertMany($insertable_array);
+      $insertable = parser::parse_simple($query_param_1);
+      $data = $db_store->insertMany($insertable);
     }
 
     if ($function_name === 'updateById') {
       $id = $query_param_1;
-      $updatable = @$str2arr->scan($query_param_2);
+      $updatable = parser::parse_simple($query_param_2);
 
       $data = $db_store->updateById($id, $updatable);
     }
 
     if ($function_name === 'update') {
-      // $str2arr does not support multiple arrays in array
-      $converted = @convert_multiple_array_string($query_param_1);
-
-      $updatable_array = [];
-      foreach($converted as $updatable) {
-        $updatable = @$str2arr->scan($updatable);
-        array_push($updatable_array, $updatable);
-      }
-
-      $data = $db_store->update($updatable_array);
+      $updatable = parser::parse_simple($query_param_1);
+      $data = $db_store->update($updatable);
     }
 
     if ($function_name === 'updateOrInsert') {
-      $insertable = @$str2arr->scan($query_param_1);
+      $insertable = parser::parse_simple($query_param_1);
       $autoGenerateIdOnInsert = boolval($query_param_2);
       $data = $db_store->updateOrInsert($insertable, $autoGenerateIdOnInsert);
     }
 
     if ($function_name === 'updateOrInsertMany') {
-      // $str2arr does not support multiple arrays in array
-      $converted = @convert_multiple_array_string($query_param_1);
-
-      $insertable_array = [];
-      foreach($converted as $insertable) {
-        $insertable = @$str2arr->scan($insertable);
-        array_push($insertable_array, $insertable);
-      }
-
+      $insertable = parser::parse_simple($query_param_1);
       $autoGenerateIdOnInsert = boolval($query_param_2);
 
-      $data = $db_store->updateOrInsertMany($insertable_array, $autoGenerateIdOnInsert);
+      $data = $db_store->updateOrInsertMany($insertable, $autoGenerateIdOnInsert);
     }
 
     if ($function_name === 'removeFieldsById') {
       $id = $query_param_1;
-      $fieldsToRemove = @$str2arr->scan($query_param_2);
+      $fieldsToRemove = parser::parse_simple($query_param_2);
       $data = $db_store->removeFieldsById($id, $fieldsToRemove);
     }
 
     if ($function_name === 'deleteBy') {
-      $criteria = @$str2arr->scan($query_param_1);
+      $criteria = parser::parse_simple($query_param_1);
       $data = $db_store->deleteBy($criteria);
     }
 
@@ -418,6 +394,19 @@ function render_view_query() {
     }
   } catch (Throwable $e) {
     $data = $e->getMessage();
+
+    // Improved error messages
+    if (str_starts_with($data, '[php-array-parser]')) {
+      $data = str_replace('[php-array-parser] ', 'Parse error: ', $data);
+    }
+
+    if (str_contains($e->getFile(), 'sleekdb/src/QueryBuilder.php')) {
+      $data = 'Query error: ' . $data;
+    }
+
+    if (str_contains($e->getFile(), 'sleekdb/src/Classes/ConditionsHandler.php')) {
+      $data = 'Condition error: ' . $data;
+    }
   }
 
   if (isset($data[0]) AND is_array($data[0])) {
@@ -784,7 +773,7 @@ function render_html($stores, $html) {
         <div class="display-flex">
           <aside class="margins" style="flex: initial; width: 260px; border-right: 1px solid #ccc;">
             <span class="logo">phpSleekDBAdmin</span>
-            <span class="version">v0.2.2</span>
+            <span class="version">v0.3.0</span>
             <div style="height: 7px;"></div>
             <a href="https://github.com/galanonym/phpsleekdbadmin" target="_blank">Documentation</a>
             <span> | </span>
@@ -843,7 +832,7 @@ function render_view_login() {
         <div style="width: 250px; margin: 0 auto;">
           <div class="seperator"></div>
           <span class="logo">phpSleekDBAdmin</span>
-          <span class="version">v0.2.2</span>
+          <span class="version">v0.3.0</span>
           <div class="seperator"></div>
           <div class="seperator"></div>
           <form method="POST">
@@ -988,380 +977,59 @@ function render_jquery_caret() {
     // Written by and Copyright of Luke Morton, 2011
     // Licensed under MIT
     (function ($) {
-        // Behind the scenes method deals with browser
-        // idiosyncrasies and such
-        $.caretTo = function (el, index) {
-            if (el.createTextRange) {
-                var range = el.createTextRange();
-                range.move("character", index);
-                range.select();
-            } else if (el.selectionStart != null) {
-                el.focus();
-                el.setSelectionRange(index, index);
+      // Behind the scenes method deals with browser
+      // idiosyncrasies and such
+      $.caretTo = function (el, index) {
+        if (el.createTextRange) {
+          var range = el.createTextRange();
+          range.move("character", index);
+          range.select();
+        } else if (el.selectionStart != null) {
+          el.focus();
+          el.setSelectionRange(index, index);
+        }
+      };
+
+      // The following methods are queued under fx for more
+      // flexibility when combining with $.fn.delay() and
+      // jQuery effects.
+
+      // Set caret to a particular index
+      $.fn.caretTo = function (index, offset) {
+        return this.queue(function (next) {
+          if (isNaN(index)) {
+            var i = $(this).val().indexOf(index);
+
+            if (offset === true) {
+                i += index.length;
+            } else if (offset) {
+                i += offset;
             }
-        };
 
-        // The following methods are queued under fx for more
-        // flexibility when combining with $.fn.delay() and
-        // jQuery effects.
+            $.caretTo(this, i);
+          } else {
+            $.caretTo(this, index);
+          }
 
-        // Set caret to a particular index
-        $.fn.caretTo = function (index, offset) {
-            return this.queue(function (next) {
-                if (isNaN(index)) {
-                    var i = $(this).val().indexOf(index);
+          next();
+        });
+      };
 
-                    if (offset === true) {
-                        i += index.length;
-                    } else if (offset) {
-                        i += offset;
-                    }
+      // Set caret to beginning of an element
+      $.fn.caretToStart = function () {
+        return this.caretTo(0);
+      };
 
-                    $.caretTo(this, i);
-                } else {
-                    $.caretTo(this, index);
-                }
-
-                next();
-            });
-        };
-
-        // Set caret to beginning of an element
-        $.fn.caretToStart = function () {
-            return this.caretTo(0);
-        };
-
-        // Set caret to the end of an element
-        $.fn.caretToEnd = function () {
-            return this.queue(function (next) {
-                $.caretTo(this, $(this).val().length);
-                next();
-            });
-        };
+      // Set caret to the end of an element
+      $.fn.caretToEnd = function () {
+        return this.queue(function (next) {
+          $.caretTo(this, $(this).val().length);
+          next();
+        });
+      };
     }(jQuery));
-    </script>
+  </script>
 <?php
-}
-
-/**
- * A class used convert string representations or php arrays to an array without using eval()
- * Using: https://stackoverflow.com/a/30833466/3202588
- * With some custom code added
- */
-class ArrayTokenScanner
-{
-    /** @var array  */
-    protected $arrayKeys = [];
-
-    /**
-     * @param string $string   e.g. array('foo' => 123, 'bar' => [0 => 123, 1 => 12345])
-     *
-     * @return array
-     */
-    public function scan($string)
-    {
-        // Remove whitespace and semi colons
-        $sanitized = trim($string, " \t\n\r\0\x0B;");
-        if (!$string) {
-          return [];
-        }
-
-        if ($string === '[]') {
-          return [];
-        }
-
-        if(preg_match('/^(\[|array\().*(\]|\))$/', $sanitized)) {
-            if($tokens = $this->tokenize("<?php {$sanitized}")) {
-                $this->initialize($tokens);
-                return $this->parse($tokens);
-            }
-        }
-
-        // Given array format is invalid
-        throw new InvalidArgumentException("Invalid array format.");
-    }
-
-    /**
-     * @param array $tokens
-     */
-    protected function initialize(array $tokens)
-    {
-        $this->arrayKeys = [];
-        while($current = current($tokens)) {
-            $next = next($tokens);
-            if(isset($next[0]) AND $next[0] === T_DOUBLE_ARROW) {
-                $this->arrayKeys[] = $current[1];
-            }
-        }
-    }
-
-    /**
-     * @param array $tokens
-     * @return array
-     */
-    protected function parse(array &$tokens)
-    {
-        $array = [];
-        $token = current($tokens);
-        if(in_array($token[0], [T_ARRAY, T_BRACKET_OPEN])) {
-
-            // Is array!
-            $assoc = false;
-            $index = 0;
-            $discriminator = ($token[0] === T_ARRAY) ? T_ARRAY_CLOSE : T_BRACKET_CLOSE;
-            while($token = $this->until($tokens, $discriminator)) {
-
-
-                // Skip arrow ( => )
-                if(in_array($token[0], [T_DOUBLE_ARROW])) {
-                    continue;
-                }
-
-                // Reset associative array key
-                if($token[0] === T_COMMA_SEPARATOR) {
-                    $assoc = false;
-                    continue;
-                }
-
-                // Look for array keys
-                $next = next($tokens);
-                prev($tokens);
-                if($next[0] === T_DOUBLE_ARROW) {
-                    // Is assoc key
-
-                    // Do not surround strings with extra quotes
-                    $token[1] = rtrim($token[1], '\'');
-                    $token[1] = ltrim($token[1], '\'');
-                    $token[1] = rtrim($token[1], '"');
-                    $token[1] = ltrim($token[1], '"');
-
-                    $assoc = $token[1];
-                    if(preg_match('/^-?(0|[1-9][0-9]*)$/', $assoc)) {
-                        $index = $assoc = (int) $assoc;
-                    }
-                    continue;
-                }
-
-                // Parse array contents recursively
-                if(in_array($token[0], [T_ARRAY, T_BRACKET_OPEN])) {
-                    $array[($assoc !== false) ? $assoc : $this->createKey($index)] = $this->parse($tokens);
-                    continue;
-                }
-
-                // Parse atomic string
-                if(in_array($token[0], [T_STRING, T_NUM_STRING, T_CONSTANT_ENCAPSED_STRING])) {
-
-                    // Do not surround strings with extra quotes
-                    $token[1] = rtrim($token[1], '\'');
-                    $token[1] = ltrim($token[1], '\'');
-                    $token[1] = rtrim($token[1], '"');
-                    $token[1] = ltrim($token[1], '"');
-
-                    $array[($assoc !== false) ? $assoc : $this->createKey($index)] = $this->parseAtomic($token[1]);
-                }
-
-                // Parse atomic number
-                if(in_array($token[0], [T_LNUMBER, T_DNUMBER])) {
-
-                    // Check if number is negative
-                    $prev = prev($tokens);
-                    $value = $token[1];
-                    if($prev[0] === T_MINUS) {
-                        $value = "-{$value}";
-                    }
-                    next($tokens);
-
-                    $array[($assoc !== false) ? $assoc : $this->createKey($index)] = $this->parseAtomic($value);
-                }
-
-                // Increment index unless a associative key is used. In this case we want too reuse the current value.
-                if(!is_string($assoc)) {
-                    $index++;
-                }
-            }
-
-            return $array;
-        }
-    }
-
-    /**
-     * @param array $tokens
-     * @param int|string $discriminator
-     *
-     * @return array|false
-     */
-    protected function until(array &$tokens, $discriminator)
-    {
-        $next = next($tokens);
-        if($next === false or $next[0] === $discriminator) {
-            return false;
-        }
-
-        return $next;
-    }
-
-    protected function createKey(&$index)
-    {
-        do {
-            if(!in_array($index, $this->arrayKeys, true)) {
-                return $index;
-            }
-        } while(++$index);
-    }
-
-    /**
-     * @param $string
-     * @return array|false
-     */
-    protected function tokenize($string)
-    {
-        $tokens = token_get_all($string);
-        if(is_array($tokens)) {
-
-            // Filter tokens
-            $tokens = array_values(array_filter($tokens, [$this, 'accept']));
-
-            // Normalize token format, make syntax characters look like tokens for consistent parsing
-            return $this->normalize($tokens);
-
-        }
-
-        return false;
-    }
-
-    /**
-     * Method used to accept or deny tokens so that we only have to deal with the allowed tokens
-     *
-     * @param array|string $value    A token or syntax character
-     * @return bool
-     */
-    protected function accept($value)
-    {
-        if(is_string($value)) {
-            // Allowed syntax characters: comma's and brackets.
-            return in_array($value, [',', '[', ']', ')', '-']);
-        }
-        if(!in_array($value[0], [T_ARRAY, T_CONSTANT_ENCAPSED_STRING, T_DOUBLE_ARROW, T_STRING, T_NUM_STRING, T_LNUMBER, T_DNUMBER])) {
-            // Token did not match requirement. The token is not listed in the collection above.
-            return false;
-        }
-        // Token is accepted.
-        return true;
-    }
-
-    /**
-     * Normalize tokens so that each allowed syntax character looks like a token for consistent parsing.
-     *
-     * @param array $tokens
-     *
-     * @return array
-     */
-    protected function normalize(array $tokens)
-    {
-        // Define some constants for consistency. These characters are not "real" tokens.
-        defined('T_MINUS')           ?: define('T_MINUS',           '-');
-        defined('T_BRACKET_OPEN')    ?: define('T_BRACKET_OPEN',    '[');
-        defined('T_BRACKET_CLOSE')   ?: define('T_BRACKET_CLOSE',   ']');
-        defined('T_COMMA_SEPARATOR') ?: define('T_COMMA_SEPARATOR', ',');
-        defined('T_ARRAY_CLOSE')     ?: define('T_ARRAY_CLOSE',     ')');
-
-        // Normalize the token array
-        return array_map( function($token) {
-
-            // If the token is a syntax character ($token[0] will be string) than use the token (= $token[0]) as value (= $token[1]) as well.
-            return [
-                0 => $token[0],
-                1 => (is_string($token[0])) ? $token[0] : $token[1]
-            ];
-
-        }, $tokens);
-    }
-
-    /**
-     * @param $value
-     *
-     * @return mixed
-     */
-    protected function parseAtomic($value)
-    {
-        // If the parameter type is a string than it will be enclosed with quotes
-        if(preg_match('/^["\'].*["\']$/', $value)) {
-            // is (already) a string
-            return $value;
-        }
-
-        // Parse integer
-        if(preg_match('/^-?(0|[1-9][0-9]*)$/', $value)) {
-            return (int) $value;
-        }
-
-        // Parse other sorts of numeric values (floats, scientific notation etc)
-        if(is_numeric($value)) {
-            return  (float) $value;
-        }
-
-        // Parse bool
-        if(in_array(strtolower($value), ['true', 'false'])) {
-            return ($value == 'true') ? true : false;
-        }
-
-        // Parse null
-        if(strtolower($value) === 'null') {
-            return null;
-        }
-
-        // Use string for any remaining values.
-        // For example, bitsets are not supported. 0x2,1x2 etc
-        return $value;
-    }
-}
-
-// $str2arr does not support multiple arrays in array so this is a custom simple solution to that
-//
-// Conversts strings like: '[ ["name" => "Josh", "age" => 23], ["name" => "Mike", "age" => 19] ]'
-// Into array of strings: [ '["name" => "Josh", "age" => 23]', '["name" => "Mike", "age" => 19]' ]
-function convert_multiple_array_string($string) {
-  $string = trim($string);
-
-  // Remove first [
-  if (substr($string, 0, 1) === '[') {
-    $string = substr($string, 1, strlen($string));
-  }
-
-  // Remove last ]
-  if (substr($string, -1, 1) === ']') {
-    $string = substr($string, 0, -1);
-  }
-
-  if (str_contains($string, '], [')) {
-    $exploaded = explode('], [', $string);
-  }
-
-  if (str_contains($string, '],[')) {
-    $exploaded = explode('],[', $string);
-  }
-
-  // First element in array has extra [
-  $first = array_shift($exploaded);
-  $first = trim($first);
-  $first = substr($first, 1, strlen($first));
-  array_unshift($exploaded, $first);
-
-  // Last element in array has extra ]
-  $last = array_pop($exploaded);
-  $last = trim($last);
-  $last = substr($last, 0, -1);
-  array_push($exploaded, $last);
-
-  // All items in $exploaded are missing [ and ]
-  $trimmed = [];
-  foreach($exploaded as $part) {
-    $part = trim($part);
-    $part = '[' . $part . ']';
-    array_push($trimmed, $part);
-  }
-
-  return $trimmed;
 }
 
 start();

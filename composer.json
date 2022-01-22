@@ -2,7 +2,8 @@
     "require": {
         "symfony/var-dumper": "^5.4",
         "rakibtg/sleekdb": "^2.13",
-        "components/jquery": "^3.6"
+        "components/jquery": "^3.6",
+        "battye/php-array-parser": "^1.0"
     },
      "config": {
         "vendor-dir": "phpsleekdbadmin_dependencies"

@@ -11,7 +11,7 @@ phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Follo
 
 ## Installation & Configuration
 
-1. [Download latest release here.](https://github.com/galanonym/phpsleekdbadmin/releases/download/v0.2.2/phpsleekdbadmin.zip)
+1. [Download latest release here.](https://github.com/galanonym/phpsleekdbadmin/releases/download/v0.3.0/phpsleekdbadmin.zip)
 2. Extract into your webroot into `/phpsleekdbadmin/` directory
 3. Rename `phpsleekdbadmin.config.sample.php` into `phpsleekdbadmin.config.php`
 4. Open `phpsleekdbadmin.config.php` in a text editor.
@@ -24,6 +24,9 @@ phpSleekDBAdmin is a web-based SleekDB database admin tool written in PHP. Follo
 ![alt text](https://github.com/galanonym/phpsleekdbadmin/blob/main/screenshot.png?raw=true)
 
 ## Changelog
+
+0.3.0 (2022-01-22)
+- feature - Multi level array $conditions supported, by using better array parser: battye\array_parser
 
 0.2.2 (2022-01-22)
 - issue #1 - Fix by removing MicroTime class, move start() to bottom
